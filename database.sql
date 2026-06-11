@@ -21,8 +21,20 @@ CREATE TABLE IF NOT EXISTS inventory (
     INDEX idx_location_id (location_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Location meaning:
+-- warehouse: Warehouse building (A-B only)
+-- row_location: Zone (A-C)
+-- column_location: Row (1-5)
+-- location_id format: {Warehouse}{Zone}-{Row}-{Level}, for example AA-1-0
+
+-- Normalize existing databases that still contain Warehouse C.
+UPDATE inventory
+SET warehouse = 'B',
+    location_id = CONCAT('B', row_location, '-', column_location, '-', level)
+WHERE warehouse NOT IN ('A', 'B');
+
 -- Sample data (optional)
 INSERT INTO inventory (product_id, product_name, quantity, status, warehouse, row_location, column_location, level, location_id) VALUES 
 ('P001', 'สินค้า A', 100, 'Keep', 'A', 'A', 1, 0, 'AA-1-0'),
 ('P002', 'สินค้า B', 50, 'Keep', 'B', 'B', 2, 1, 'BB-2-1'),
-('P003', 'สินค้า C', 0, 'Empty', 'C', 'C', 3, 2, 'CC-3-2');
+('P003', 'สินค้า C', 0, 'Empty', 'B', 'C', 3, 2, 'BC-3-2');

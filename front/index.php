@@ -4,773 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบบริหารคลังสินค้าอัจฉริยะ (Inventory Dashboard)</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-
-        *, *::before, *::after {
-            margin: 0; padding: 0; box-sizing: border-box;
-        }
-
-        :root {
-            --sidebar-w: 220px;
-            --sidebar-collapsed: 64px;
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --primary-light: #eef2ff;
-            --success: #059669;
-            --success-light: #ecfdf5;
-            --danger: #e11d48;
-            --danger-light: #fff1f2;
-            --warning: #d97706;
-            --warning-light: #fffbeb;
-            --surface: #ffffff;
-            --surface-2: #f8fafc;
-            --border: #e2e8f0;
-            --text-1: #0f172a;
-            --text-2: #334155;
-            --text-3: #64748b;
-            --radius: 12px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
-            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-        }
-
-        body {
-            background: var(--surface-2);
-            color: var(--text-1);
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            overflow-x: hidden;
-        }
-
-        /* ─────────── SIDEBAR ─────────── */
-        .sidebar {
-            width: var(--sidebar-w);
-            min-height: 100vh;
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            flex-direction: column;
-            transition: width 0.25s cubic-bezier(0.4,0,0.2,1);
-            flex-shrink: 0;
-            position: fixed;
-            top: 0; left: 0;
-            height: 100%;
-            z-index: 200;
-            overflow: hidden;
-        }
-
-        .sidebar.collapsed { width: var(--sidebar-collapsed); }
-
-        .sidebar-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 16px;
-            border-bottom: 1px solid var(--border);
-            min-height: 64px;
-            flex-shrink: 0;
-        }
-
-        .sidebar-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            overflow: hidden;
-        }
-
-        .sidebar-logo-icon {
-            width: 32px; height: 32px;
-            background: var(--primary);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .sidebar-logo-text {
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--text-1);
-            white-space: nowrap;
-            overflow: hidden;
-            transition: opacity 0.2s, width 0.2s;
-        }
-
-        .sidebar.collapsed .sidebar-logo-text { opacity: 0; width: 0; }
-        .sidebar.collapsed .sidebar-logo { gap: 0; }
-
-        .sidebar-toggle {
-            background: none; border: none; cursor: pointer;
-            color: var(--text-3); padding: 4px;
-            border-radius: 6px; transition: all 0.2s;
-            flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .sidebar-toggle:hover { background: var(--surface-2); color: var(--text-1); }
-
-        .sidebar-nav {
-            padding: 12px 8px;
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        .nav-section-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-3);
-            padding: 8px 8px 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            transition: opacity 0.2s;
-        }
-        .sidebar.collapsed .nav-section-label { opacity: 0; }
-
-        .nav-item {
-            display: flex; align-items: center;
-            gap: 10px; padding: 10px 10px;
-            border-radius: 8px; cursor: pointer;
-            text-decoration: none; color: var(--text-2);
-            font-size: 0.875rem; font-weight: 500;
-            transition: all 0.15s; white-space: nowrap;
-            overflow: hidden; position: relative;
-        }
-        .nav-item:hover { background: var(--surface-2); color: var(--text-1); }
-        .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
-        .nav-item svg { flex-shrink: 0; }
-
-        .nav-item-text {
-            overflow: hidden; transition: opacity 0.2s, width 0.2s;
-        }
-        .sidebar.collapsed .nav-item-text { opacity: 0; width: 0; }
-
-        .nav-badge {
-            margin-left: auto; background: var(--primary); color: white;
-            font-size: 0.7rem; font-weight: 700;
-            padding: 2px 7px; border-radius: 20px;
-            flex-shrink: 0;
-            transition: opacity 0.2s;
-        }
-        .sidebar.collapsed .nav-badge { opacity: 0; }
-
-        .sidebar-footer {
-            padding: 12px 8px;
-            border-top: 1px solid var(--border);
-            flex-shrink: 0;
-        }
-
-        /* ─────────── MAIN LAYOUT ─────────── */
-        .main-wrapper {
-            margin-left: var(--sidebar-w);
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            transition: margin-left 0.25s cubic-bezier(0.4,0,0.2,1);
-            min-width: 0;
-        }
-
-        .main-wrapper.collapsed { margin-left: var(--sidebar-collapsed); }
-
-        /* ─────────── TOP NAV BAR ─────────── */
-        .topnav {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0 24px;
-            height: 64px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            position: sticky; top: 0; z-index: 100;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .topnav-page-title {
-            font-weight: 700; font-size: 1rem; color: var(--text-1);
-            white-space: nowrap;
-        }
-
-        /* ─────────── SEARCH BAR ─────────── */
-        .search-wrap {
-            flex: 1;
-            max-width: 480px;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 9px 14px 9px 38px;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            font-size: 0.875rem;
-            color: var(--text-1);
-            background: var(--surface-2);
-            transition: all 0.2s;
-            outline: none;
-        }
-        .search-input:focus {
-            border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
-        }
-        .search-input::placeholder { color: var(--text-3); }
-
-        .search-icon {
-            position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-            color: var(--text-3); pointer-events: none;
-        }
-
-        /* ─────────── FILTER CHIPS / DROPDOWN AREA ─────────── */
-        .filter-bar {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 10px 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            transition: all 0.25s ease;
-        }
-
-        .filter-bar.hidden {
-            display: none;
-        }
-
-        .filter-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-3);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            flex-shrink: 0;
-        }
-
-        .filter-select {
-            padding: 7px 30px 7px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.82rem;
-            color: var(--text-2);
-            background: var(--surface-2);
-            cursor: pointer;
-            outline: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-        .filter-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
-        }
-
-        .filter-clear-btn {
-            padding: 7px 12px;
-            background: none;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.82rem;
-            color: var(--text-3);
-            cursor: pointer;
-            font-family: inherit;
-            display: flex; align-items: center; gap: 5px;
-            transition: all 0.2s;
-        }
-        .filter-clear-btn:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-light); }
-
-        .filter-results-badge {
-            margin-left: auto;
-            font-size: 0.8rem;
-            color: var(--text-3);
-            background: var(--surface-2);
-            padding: 4px 10px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            flex-shrink: 0;
-        }
-
-        /* ─────────── PAGE CONTENT ─────────── */
-        .page-content {
-            padding: 20px 24px;
-            flex: 1;
-        }
-
-        /* ─────────── STATS ROW ─────────── */
-        .stats-row {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            padding: 12px 18px;
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            display: flex; align-items: center; gap: 12px;
-            flex: 1; min-width: 130px;
-        }
-
-        .stat-icon {
-            width: 38px; height: 38px; border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-        .stat-all .stat-icon { background: #f1f5f9; color: #475569; }
-        .stat-keep .stat-icon { background: var(--success-light); color: var(--success); }
-        .stat-empty .stat-icon { background: var(--danger-light); color: var(--danger); }
-
-        .stat-label { font-size: 0.72rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; }
-        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--text-1); line-height: 1.2; }
-
-        /* ─────────── TOOLBAR ROW ─────────── */
-        .toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 14px;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .toolbar-left {
-            display: flex; align-items: center; gap: 10px;
-        }
-
-        .toolbar-right {
-            display: flex; align-items: center; gap: 10px;
-        }
-
-        .card-section-title {
-            font-size: 0.95rem; font-weight: 700; color: var(--text-1);
-            display: flex; align-items: center; gap: 8px;
-        }
-
-        /* ─────────── BUTTONS ─────────── */
-        .btn {
-            padding: 9px 16px;
-            border: none; border-radius: 9px;
-            font-size: 0.855rem; font-weight: 600;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            display: inline-flex; align-items: center; gap: 7px;
-            box-shadow: var(--shadow-sm);
-            font-family: inherit;
-            white-space: nowrap;
-        }
-
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
-
-        .btn-success { background: var(--success); color: white; }
-        .btn-success:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
-
-        .btn-warning { background: var(--surface); color: var(--warning); border: 1.5px solid #fcd34d; }
-        .btn-warning:hover { background: var(--warning-light); }
-        .btn-warning.active { background: var(--warning-light); border-color: #f59e0b; color: #92400e; }
-
-        .btn-ghost { background: var(--surface); border: 1.5px solid var(--border); color: var(--text-2); box-shadow: none; }
-        .btn-ghost:hover { background: var(--surface-2); }
-
-        .btn-icon {
-            padding: 8px; border-radius: 9px;
-            background: var(--surface); border: 1.5px solid var(--border);
-            color: var(--text-3); cursor: pointer; transition: all 0.18s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-icon:hover { background: var(--surface-2); color: var(--text-1); }
-
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { background: #be123c; }
-
-        /* ─────────── TABLE CARD ─────────── */
-        .main-card {
-            background: var(--surface);
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            overflow: hidden;
-        }
-
-        .table-responsive {
-            width: 100%; overflow-x: auto;
-        }
-
-        table {
-            width: 100%; border-collapse: collapse;
-            font-size: 0.875rem;
-        }
-
-        table th {
-            background: var(--surface-2);
-            padding: 12px 16px;
-            font-weight: 600; font-size: 0.78rem;
-            color: var(--text-3); text-align: left;
-            text-transform: uppercase; letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
-        }
-
-        table td {
-            padding: 13px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            color: var(--text-2);
-            vertical-align: middle; white-space: nowrap;
-        }
-
-        table tbody tr:last-child td { border-bottom: none; }
-        table tbody tr:hover { background: #fafbff; }
-
-        .badge {
-            display: inline-flex; align-items: center; gap: 4px;
-            padding: 4px 10px; border-radius: 6px;
-            font-size: 0.78rem; font-weight: 600;
-        }
-        .badge-success { background: var(--success-light); color: #065f46; }
-        .badge-danger { background: var(--danger-light); color: #9f1239; }
-
-        .location-tag {
-            color: #2563eb; font-weight: 600;
-            background: #eff6ff;
-            padding: 3px 8px; border-radius: 5px;
-            border: 1px solid #bfdbfe; font-size: 0.8rem;
-        }
-
-        .action-cell { display: flex; gap: 6px; align-items: center; }
-
-        .btn-row {
-            padding: 5px 11px; border-radius: 6px;
-            font-size: 0.78rem; font-weight: 600; cursor: pointer; border: 1px solid transparent;
-            transition: all 0.15s; font-family: inherit;
-        }
-        .btn-row-edit { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
-        .btn-row-edit:hover { background: #dbeafe; }
-        .btn-row-delete { background: var(--danger-light); color: var(--danger); border-color: #fecdd3; }
-        .btn-row-delete:hover { background: #ffe4e6; }
-        .btn-row-dispatch { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
-        .btn-row-dispatch:hover { background: #dcfce7; }
-
-        /* ─────────── EMPTY / LOADING STATES ─────────── */
-        .state-container { text-align: center; padding: 48px 24px; }
-        .state-container .state-icon { font-size: 2.5rem; margin-bottom: 12px; }
-        .state-container p { color: var(--text-3); font-size: 0.9rem; }
-        .loading-dots { display: inline-flex; gap: 5px; }
-        .loading-dots span {
-            width: 7px; height: 7px; background: var(--primary); border-radius: 50%;
-            animation: bounce 1.2s infinite ease-in-out;
-        }
-        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bounce { 0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)} }
-
-        /* ─────────── MODAL BASE ─────────── */
-        .modal {
-            display: none; position: fixed; z-index: 1000;
-            inset: 0;
-            background: rgba(15,23,42,0.45);
-            backdrop-filter: blur(4px);
-            align-items: center; justify-content: center;
-        }
-        .modal.open { display: flex; }
-
-        .modal-content {
-            background: white; border-radius: 16px;
-            width: 92%; max-width: 820px;
-            box-shadow: var(--shadow-lg);
-            animation: modalIn 0.22s ease-out;
-            overflow: hidden;
-            max-height: 90vh;
-            display: flex; flex-direction: column;
-        }
-        @keyframes modalIn { from { transform: translateY(-16px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
-
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 18px 24px; border-bottom: 1px solid var(--border);
-            background: var(--surface-2); flex-shrink: 0;
-        }
-        .modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--text-1); }
-        .close-modal { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-3); line-height: 1; transition: color 0.15s; }
-        .close-modal:hover { color: var(--text-1); }
-
-        .modal-body { padding: 22px 24px; overflow-y: auto; flex: 1; }
-        .modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); background: var(--surface-2); display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
-
-        .form-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
-
-        .form-section-title {
-            font-size: 0.85rem; font-weight: 700; color: var(--primary);
-            margin-bottom: 14px; border-bottom: 2px solid #e0e7ff;
-            padding-bottom: 6px; display: flex; align-items: center; gap: 6px;
-        }
-
-        .form-group { margin-bottom: 13px; }
-        .form-group label { display: block; margin-bottom: 5px; color: var(--text-2); font-weight: 600; font-size: 0.82rem; }
-        .form-group input, .form-group select {
-            width: 100%; padding: 9px 12px;
-            border: 1.5px solid var(--border); border-radius: 8px;
-            font-size: 0.875rem; color: var(--text-1);
-            font-family: inherit; transition: all 0.2s; background: white; outline: none;
-        }
-        .form-group input:focus, .form-group select:focus {
-            border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
-        }
-        .form-group input[readonly] { background: var(--surface-2); color: var(--text-3); }
-
-        .btn-cancel { background: white; border: 1.5px solid var(--border); color: var(--text-2); }
-        .btn-cancel:hover { background: var(--surface-2); }
-
-        /* ─────────── DISPATCH MODAL SPECIFIC ─────────── */
-        .dispatch-info-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr);
-            gap: 10px; margin-bottom: 20px;
-        }
-        @media (min-width: 500px) { .dispatch-info-grid { grid-template-columns: repeat(3, 1fr); } }
-
-        .dispatch-info-item {
-            background: var(--surface-2); border: 1px solid var(--border);
-            border-radius: 9px; padding: 10px 14px;
-        }
-        .dispatch-info-item .di-label { font-size: 0.72rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
-        .dispatch-info-item .di-value { font-size: 0.92rem; font-weight: 700; color: var(--text-1); }
-
-        .dispatch-qty-section {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 1.5px solid #bae6fd;
-            border-radius: 12px; padding: 18px 20px;
-        }
-
-        .dispatch-qty-label { font-size: 0.85rem; font-weight: 700; color: #0369a1; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-
-        .qty-input-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-
-        .qty-input-field {
-            flex: 1; padding: 10px 14px;
-            border: 2px solid #bae6fd; border-radius: 9px;
-            font-size: 1.1rem; font-weight: 700; color: var(--text-1);
-            font-family: inherit; outline: none; background: white;
-            transition: all 0.2s;
-        }
-        .qty-input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
-
-        .qty-btn {
-            width: 38px; height: 38px; border-radius: 8px;
-            background: white; border: 2px solid #bae6fd;
-            font-size: 1.3rem; font-weight: 700; cursor: pointer;
-            color: #0369a1; transition: all 0.15s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .qty-btn:hover { background: #e0f2fe; border-color: #7dd3fc; }
-
-        .qty-remaining-row {
-            display: flex; align-items: center; justify-content: space-between;
-            background: white; border-radius: 9px; padding: 10px 14px;
-            border: 1px solid #bae6fd;
-        }
-        .qty-remaining-label { font-size: 0.82rem; font-weight: 600; color: var(--text-3); }
-        .qty-remaining-value { font-size: 1.1rem; font-weight: 800; }
-        .qty-remaining-ok { color: var(--success); }
-        .qty-remaining-warn { color: var(--warning); }
-        .qty-remaining-bad { color: var(--danger); }
-
-        /* ─────────── TOAST ─────────── */
-        .toast {
-            position: fixed; top: 20px; right: 20px;
-            padding: 13px 20px; border-radius: 10px;
-            color: white; font-weight: 600; font-size: 0.875rem;
-            box-shadow: var(--shadow-lg); z-index: 2000;
-            opacity: 0; transform: translateY(-12px);
-            transition: all 0.28s cubic-bezier(0.16,1,0.3,1);
-            display: none; max-width: 340px;
-        }
-        .toast.show { display: block; opacity: 1; transform: translateY(0); }
-        .toast-success { background: #10b981; }
-        .toast-error { background: var(--danger); }
-        .toast-warning { background: var(--warning); }
-
-        /* ─────────── RESPONSIVE ─────────── */
-        @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.mobile-open { transform: translateX(0); }
-            .main-wrapper { margin-left: 0 !important; }
-            .mobile-overlay { display: block !important; }
-            .topnav { padding: 0 16px; }
-            .page-content { padding: 14px 16px; }
-            .dispatch-info-grid { grid-template-columns: 1fr 1fr; }
-        }
-
-        .mobile-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(15,23,42,0.4); z-index: 190;
-        }
-
-        .search-highlight {
-            background: #fef08a; border-radius: 2px; font-weight: 700;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
+<?php
+$activePage = 'inventory';
+$pageTitle = 'คลังสินค้า';
+$showInventoryToolbar = true;
+?>
 
 <!-- Mobile overlay -->
 <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
 
-<!-- ═══════════ SIDEBAR ═══════════ -->
-<nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <div class="sidebar-logo">
-            <div class="sidebar-logo-icon">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-            </div>
-            <span class="sidebar-logo-text">WMS Pro</span>
-        </div>
-        <button class="sidebar-toggle" onclick="toggleSidebar()" title="พับเมนู">
-            <svg id="sidebarChevron" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-    </div>
-
-    <div class="sidebar-nav">
-        <div class="nav-section-label">เมนูหลัก</div>
-
-        <a class="nav-item active" href="#" onclick="return false;">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-            <span class="nav-item-text">คลังสินค้า</span>
-            <span class="nav-badge" id="sidebarBadge">0</span>
-        </a>
-
-        <a class="nav-item" href="#" onclick="showComingSoon('Order History'); return false;">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <span class="nav-item-text">Order History</span>
-        </a>
-
-        <a class="nav-item" href="#" onclick="showComingSoon('Warehouse Layout'); return false;">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-            <span class="nav-item-text">Warehouse Layout</span>
-        </a>
-
-        <div class="nav-section-label" style="margin-top:8px;">ระบบ</div>
-
-        <a class="nav-item" href="#" onclick="showComingSoon('รายงาน'); return false;">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-            <span class="nav-item-text">รายงาน</span>
-        </a>
-
-        <a class="nav-item" href="#" onclick="showComingSoon('การตั้งค่า'); return false;">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span class="nav-item-text">การตั้งค่า</span>
-        </a>
-    </div>
-
-    <div class="sidebar-footer">
-        <div class="nav-item" style="cursor:default; pointer-events:none;">
-            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);display:flex;align-items:center;justify-content:center;color:white;font-size:0.75rem;font-weight:700;flex-shrink:0;">WM</div>
-            <div class="nav-item-text" style="line-height:1.2;">
-                <div style="font-size:0.8rem;font-weight:600;color:var(--text-1);">Warehouse Mgr</div>
-                <div style="font-size:0.72rem;color:var(--text-3);">admin</div>
-            </div>
-        </div>
-    </div>
-</nav>
+<?php include __DIR__ . "/components/sidebar.php"; ?>
 
 <!-- ═══════════ MAIN WRAPPER ═══════════ -->
 <div class="main-wrapper" id="mainWrapper">
 
-    <!-- TOP NAV -->
-    <header class="topnav">
-        <!-- Mobile hamburger -->
-        <button class="btn-icon" id="mobileMenuBtn" onclick="openMobileSidebar()" style="display:none;">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-
-        <span class="topnav-page-title">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-2px;margin-right:6px;color:var(--primary)"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-            คลังสินค้า
-        </span>
-
-        <!-- SEARCH BAR -->
-        <div class="search-wrap">
-            <span class="search-icon">
-                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            </span>
-            <input
-                type="text"
-                class="search-input"
-                id="searchInput"
-                placeholder="ค้นหาสินค้า, ID, Location..."
-                oninput="handleSearch()"
-                onfocus="showFilterBar()"
-            >
-        </div>
-
-        <!-- Filter toggle button -->
-        <button class="btn btn-ghost" onclick="toggleFilterBar()" id="filterToggleBtn" style="padding:8px 12px;">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 4h18M7 12h10M11 20h2"/></svg>
-            <span style="font-size:0.82rem;">Filter</span>
-        </button>
-
-        <!--  Fix Refresh — pure SVG, no image render issue -->
-        <button class="btn-icon" onclick="loadInventory()">
-            <svg class="refresh-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="23 4 23 10 17 10"/>
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
-        </button>
-
-        <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
-            <button class="btn btn-primary" onclick="openAddModal()">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-                New Order
-            </button>
-            <button class="btn btn-warning" id="toggleEditBtn" onclick="toggleEditMode()">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                Edit
-            </button>
-        </div>
-    </header>
-
-    <!-- FILTER BAR -->
-    <div class="filter-bar hidden" id="filterBar">
-        <span class="filter-label">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="display:inline;vertical-align:-1px;"><path d="M3 4h18M7 12h10M11 20h2"/></svg>
-            กรอง:
-        </span>
-
-        <select class="filter-select" id="filterStatus" onchange="applyFilters()">
-            <option value="">สถานะ: ทั้งหมด</option>
-            <option value="Keep">Keep (เก็บไว้)</option>
-            <option value="Empty">Empty (หมด)</option>
-        </select>
-
-        <select class="filter-select" id="filterWarehouse" onchange="applyFilters()">
-            <option value="">คลัง: ทั้งหมด</option>
-            <option value="A">คลัง A</option>
-            <option value="B">คลัง B</option>
-            <option value="C">คลัง C</option>
-        </select>
-
-        <select class="filter-select" id="filterDate" onchange="applyFilters()">
-            <option value="">วันที่: ทั้งหมด</option>
-            <option value="today">วันนี้</option>
-            <option value="week">7 วันล่าสุด</option>
-            <option value="month">30 วันล่าสุด</option>
-        </select>
-
-        <button class="filter-clear-btn" onclick="clearFilters()">
-            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
-            ล้างตัวกรอง
-        </button>
-
-        <span class="filter-results-badge" id="filterResultsBadge">แสดงทั้งหมด</span>
-    </div>
+    <?php include __DIR__ . "/components/navbar.php"; ?>
 
     <!-- PAGE CONTENT -->
     <main class="page-content">
@@ -883,25 +134,24 @@
                             <select id="warehouseCode">
                                 <option value="A">คลังสินค้า A</option>
                                 <option value="B">คลังสินค้า B</option>
-                                <option value="C">คลังสินค้า C</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>แถวชั้นวาง (Row)</label>
+                            <label>โซน (Zone)</label>
                             <select id="rowLocation">
-                                <option value="A">แถว A</option>
-                                <option value="B">แถว B</option>
-                                <option value="C">แถว C</option>
+                                <option value="A">โซน A</option>
+                                <option value="B">โซน B</option>
+                                <option value="C">โซน C</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>ช่องแนวตั้ง (Column)</label>
+                            <label>แถว (Row)</label>
                             <select id="columnLocation">
-                                <option value="1">ช่องที่ 1</option>
-                                <option value="2">ช่องที่ 2</option>
-                                <option value="3">ช่องที่ 3</option>
-                                <option value="4">ช่องที่ 4</option>
-                                <option value="5">ช่องที่ 5</option>
+                                <option value="1">แถว 1</option>
+                                <option value="2">แถว 2</option>
+                                <option value="3">แถว 3</option>
+                                <option value="4">แถว 4</option>
+                                <option value="5">แถว 5</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1084,9 +334,8 @@
             }
             // status
             if (statusF && item.status !== statusF) return false;
-            // warehouse (first char of location_id)
             if (warehouseF) {
-                const wh = (item.location_id || '').charAt(0).toUpperCase();
+                const wh = (item.warehouse || (item.location_id || '').charAt(0)).toUpperCase();
                 if (wh !== warehouseF) return false;
             }
             // date
@@ -1176,27 +425,29 @@
             const badgeText = item.status === 'Keep' ? '✓ Keep' : '✕ Empty';
             const dateFmt = new Date(item.created_at).toLocaleString('th-TH', { hour12: false });
             const locId = item.location_id || 'AA-1-0';
-            const canDispatch = item.status === 'Keep' && item.quantity > 0;
+            const itemId = Number(item.id);
+            const quantity = Number(item.quantity);
+            const canDispatch = item.status === 'Keep' && quantity > 0;
 
             html += `<tr>
                 <td style="font-weight:700;color:var(--text-1);">${hl(item.product_id)}</td>
                 <td>${hl(item.product_name)}</td>
-                <td style="font-weight:600;">${item.quantity}</td>
+                <td style="font-weight:600;">${quantity}</td>
                 <td><span class="badge ${badgeClass}">${badgeText}</span></td>
                 <td><span class="location-tag">${hl(locId)}</span></td>
                 <td style="color:var(--text-3);font-size:0.82rem;">${dateFmt}</td>
                 <td>
                     <button class="btn-row btn-row-dispatch"
                         ${!canDispatch ? 'disabled style="opacity:.4;cursor:not-allowed;"' : ''}
-                        onclick="${canDispatch ? `openDispatchModal(${item.id})` : ''}">
+                        onclick="${canDispatch ? `openDispatchModal(${itemId})` : ''}">
                         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:-1px;"><path d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
                         เบิก
                     </button>
                 </td>
                 ${isEditMode ? `<td>
                     <div class="action-cell">
-                        <button class="btn-row btn-row-edit" onclick="editItem(${item.id})">แก้ไข</button>
-                        <button class="btn-row btn-row-delete" onclick="openDeleteModal(${item.id}, '${escAttr(item.product_name)}')">ลบ</button>
+                        <button class="btn-row btn-row-edit" onclick="editItem(${itemId})">แก้ไข</button>
+                        <button class="btn-row btn-row-delete" onclick="openDeleteModal(${itemId}, '${escAttr(item.product_name)}')">ลบ</button>
                     </div>
                 </td>` : ''}
             </tr>`;
@@ -1333,9 +584,14 @@
 
     // ─── DISPATCH MODAL ───
     function openDispatchModal(id) {
-        const item = inventoryCachedData.find(i => i.id === id);
-        if (!item) return;
+        const item = inventoryCachedData.find(i => Number(i.id) === Number(id));
+        if (!item) {
+            showToast('ไม่พบข้อมูลสินค้าที่ต้องการเบิก กรุณาโหลดข้อมูลใหม่', 'error');
+            return;
+        }
         dispatchItem = item;
+        dispatchItem.id = Number(dispatchItem.id);
+        dispatchItem.quantity = Number(dispatchItem.quantity);
 
         const locId = item.location_id || 'N/A';
         const dateFmt = new Date(item.created_at).toLocaleString('th-TH', { hour12: false });

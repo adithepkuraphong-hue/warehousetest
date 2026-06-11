@@ -93,9 +93,30 @@ function convertInputFields($input) {
     return $input;
 }
 
-// Helper function to generate location ID
-function generateLocationId($warehouse, $row, $column, $level) {
-    return strtoupper($warehouse) . strtoupper($row) . '-' . $column . '-' . $level;
+// Helper function to generate location ID: Warehouse + Zone - Row - Level.
+function generateLocationId($warehouse, $zone, $row, $level) {
+    return strtoupper($warehouse) . strtoupper($zone) . '-' . $row . '-' . $level;
+}
+
+function validateLocation($warehouse, $zone, $row, $level) {
+    if (!preg_match('/^[A-B]$/', $warehouse)) {
+        http_response_code(400);
+        return 'Warehouse must be A or B';
+    }
+    if (!preg_match('/^[A-C]$/', $zone)) {
+        http_response_code(400);
+        return 'Zone must be A, B, or C';
+    }
+    if ($row < 1 || $row > 5) {
+        http_response_code(400);
+        return 'Row must be between 1 and 5';
+    }
+    if ($level < 0 || $level > 3) {
+        http_response_code(400);
+        return 'Level must be between 0 and 3';
+    }
+
+    return null;
 }
 
 // GET all items
@@ -166,10 +187,10 @@ function create() {
     
     // Location fields (optional)
     $warehouse = isset($input['warehouse']) ? strtoupper($input['warehouse']) : 'A';
-    $row = isset($input['row_location']) ? strtoupper($input['row_location']) : 'A';
-    $column = isset($input['column_location']) ? intval($input['column_location']) : 1;
+    $zone = isset($input['row_location']) ? strtoupper($input['row_location']) : 'A';
+    $row = isset($input['column_location']) ? intval($input['column_location']) : 1;
     $level = isset($input['level']) ? intval($input['level']) : 0;
-    $location_id = generateLocationId($warehouse, $row, $column, $level);
+    $location_id = generateLocationId($warehouse, $zone, $row, $level);
     
     // Validate status
     if ($status != 'Keep' && $status != 'Empty') {
@@ -177,27 +198,14 @@ function create() {
         return array('status' => 'error', 'message' => 'Status must be "Keep" or "Empty"');
     }
     
-    // Validate location fields
-    if (!preg_match('/^[A-C]$/', $warehouse)) {
-        http_response_code(400);
-        return array('status' => 'error', 'message' => 'Warehouse must be A, B, or C');
-    }
-    if (!preg_match('/^[A-C]$/', $row)) {
-        http_response_code(400);
-        return array('status' => 'error', 'message' => 'Row must be A, B, or C');
-    }
-    if ($column < 1 || $column > 5) {
-        http_response_code(400);
-        return array('status' => 'error', 'message' => 'Column must be between 1 and 5');
-    }
-    if ($level < 0 || $level > 3) {
-        http_response_code(400);
-        return array('status' => 'error', 'message' => 'Level must be between 0 and 3');
+    $location_error = validateLocation($warehouse, $zone, $row, $level);
+    if ($location_error) {
+        return array('status' => 'error', 'message' => $location_error);
     }
     
     $sql = "INSERT INTO inventory (product_id, product_name, quantity, status, warehouse, row_location, column_location, level, location_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssisssiis", $product_id, $product_name, $quantity, $status, $warehouse, $row, $column, $level, $location_id);
+    $stmt->bind_param("ssisssiis", $product_id, $product_name, $quantity, $status, $warehouse, $zone, $row, $level, $location_id);
     
     if ($stmt->execute()) {
         http_response_code(201);
@@ -217,8 +225,8 @@ function create() {
                 'quantity' => $quantity,
                 'status' => $status,
                 'warehouse' => $warehouse,
+                'zone' => $zone,
                 'row' => $row,
-                'column' => $column,
                 'level' => $level,
                 'location_id' => $location_id
             )
@@ -244,8 +252,8 @@ function update() {
     $quantity = isset($input['quantity']) ? intval($input['quantity']) : null;
     $status = isset($input['status']) ? $input['status'] : null;
     $warehouse = isset($input['warehouse']) ? strtoupper($input['warehouse']) : null;
-    $row = isset($input['row_location']) ? strtoupper($input['row_location']) : null;
-    $column = isset($input['column_location']) ? intval($input['column_location']) : null;
+    $zone = isset($input['row_location']) ? strtoupper($input['row_location']) : null;
+    $row = isset($input['column_location']) ? intval($input['column_location']) : null;
     $level = isset($input['level']) ? intval($input['level']) : null;
     
     // Build dynamic UPDATE query
@@ -280,7 +288,7 @@ function update() {
     }
     
     // Handle location fields
-    if ($warehouse !== null || $row !== null || $column !== null || $level !== null) {
+    if ($warehouse !== null || $zone !== null || $row !== null || $level !== null) {
         // Get current values if not all are provided
         $sql_get = "SELECT warehouse, row_location, column_location, level FROM inventory WHERE id = ?";
         $stmt_get = $conn->prepare($sql_get);
@@ -291,41 +299,28 @@ function update() {
         if ($result->num_rows > 0) {
             $current = $result->fetch_assoc();
             $warehouse = $warehouse ?? $current['warehouse'];
-            $row = $row ?? $current['row_location'];
-            $column = $column ?? $current['column_location'];
+            $zone = $zone ?? $current['row_location'];
+            $row = $row ?? $current['column_location'];
             $level = $level ?? $current['level'];
         }
         
-        // Validate location fields
-        if (!preg_match('/^[A-C]$/', $warehouse)) {
-            http_response_code(400);
-            return array('status' => 'error', 'message' => 'Warehouse must be A, B, or C');
-        }
-        if (!preg_match('/^[A-C]$/', $row)) {
-            http_response_code(400);
-            return array('status' => 'error', 'message' => 'Row must be A, B, or C');
-        }
-        if ($column < 1 || $column > 5) {
-            http_response_code(400);
-            return array('status' => 'error', 'message' => 'Column must be between 1 and 5');
-        }
-        if ($level < 0 || $level > 3) {
-            http_response_code(400);
-            return array('status' => 'error', 'message' => 'Level must be between 0 and 3');
+        $location_error = validateLocation($warehouse, $zone, $row, $level);
+        if ($location_error) {
+            return array('status' => 'error', 'message' => $location_error);
         }
         
-        $location_id = generateLocationId($warehouse, $row, $column, $level);
+        $location_id = generateLocationId($warehouse, $zone, $row, $level);
         
         $updates[] = "warehouse = ?";
         $params[] = $warehouse;
         $types .= 's';
         
         $updates[] = "row_location = ?";
-        $params[] = $row;
+        $params[] = $zone;
         $types .= 's';
         
         $updates[] = "column_location = ?";
-        $params[] = $column;
+        $params[] = $row;
         $types .= 'i';
         
         $updates[] = "level = ?";

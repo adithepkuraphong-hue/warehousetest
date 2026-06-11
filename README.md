@@ -46,9 +46,9 @@ testapi/
 - **product_name** - ชื่อสินค้า (String)
 - **quantity** - ปริมาณ (Integer, Default: 0)
 - **status** - สถานะ (Enum: 'Keep' / 'Empty')
-- **warehouse** - โรงเก็บสินค้า (A-C)
-- **row_location** - แถว (A-C)
-- **column_location** - คอลัมน์ (1-5)
+- **warehouse** - โรงเก็บสินค้า (A-B)
+- **row_location** - โซน (A-C)
+- **column_location** - แถว (1-5)
 - **level** - ชั้น (0-3)
 - **location_id** - ID ของที่อยู่ (เช่น AA-1-0) - auto-generate
 - **created_at** - วันที่สร้าง (Timestamp)
@@ -102,13 +102,18 @@ testapi/
 - เลือกสถานะ (Keep / Empty)
 
 ### 📍 Location Information (ข้อมูลที่อยู่)
-- **Warehouse** - เลือกระหว่าง A, B, หรือ C
-- **Row** - เลือกระหว่าง A, B, หรือ C
-- **Column** - เลือกระหว่าง 1-5
+- **Warehouse** - เลือกระหว่าง A หรือ B
+- **Zone** - เลือกระหว่าง A, B, หรือ C
+- **Row** - เลือกระหว่าง 1-5
 - **Level** - เลือกระหว่าง 0-3
 - **Location ID** - auto-generate เมื่อกรอกข้อมูล (เช่น AA-1-0)
-  - รูปแบบ: `{Warehouse}{Row}-{Column}-{Level}`
-  - ตัวอย่าง: AB-3-2, BA-1-0, CC-5-3 เป็นต้น
+  - รูปแบบ: `{Warehouse}{Zone}-{Row}-{Level}`
+  - ตัวอย่าง: AB-3-2, BA-1-0, BC-5-3 เป็นต้น
+
+### Warehouse Layout
+- หน้า `/front/warehouse_layout.php` แสดงภาพรวมโกดัง A และ B
+- แต่ละโกดังแบ่งเป็น Zone A-C และ Row 1-5
+- คลิกตำแหน่งเพื่อดูรายการสินค้าตาม Level 0-3
 
 ### ตารางแสดงข้อมูล
 - แสดงรายการสินค้าทั้งหมด
