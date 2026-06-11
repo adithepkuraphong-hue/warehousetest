@@ -157,15 +157,11 @@ $showInventoryToolbar = false;
     function openLocationModal(warehouse, zone, row) {
         document.getElementById('layoutModalTitle').textContent = `Warehouse-${warehouse} Zone-${zone} Row-${row} LID: ${warehouse}${zone}-${row}-XX`;
         const list = document.getElementById('levelList');
-        const items = getLocationItems(warehouse, zone, row);
-        const isEmpty = items.length === 0;
-        
-        list.className = `level-list warehouse-${warehouse.toLowerCase()}`;
-        list.innerHTML = levels.map(level => renderLevelCard(warehouse, zone, row, level, isEmpty)).join('');
+        list.innerHTML = levels.map(level => renderLevelCard(warehouse, zone, row, level)).join('');
         document.getElementById('layoutModal').classList.add('open');
     }
 
-    function renderLevelCard(warehouse, zone, row, level, isCellEmpty) {
+    function renderLevelCard(warehouse, zone, row, level) {
         const levelItems = getLocationItems(warehouse, zone, row).filter(item => Number(item.level || 0) === level);
         const locationId = `${warehouse}${zone}-${row}-${level}`;
         const products = levelItems.length
@@ -180,12 +176,9 @@ $showInventoryToolbar = false;
             `).join('')
             : `<div class="level-empty">ไม่มีสินค้าในชั้นนี้</div>`;
 
-        const cellStatusClass = isCellEmpty ? 'is-empty' : 'is-filled';
-        const zoneClass = `zone-border-${zone.toLowerCase()}`;
-
         return `
             <div class="level-row">
-                <div class="level-badge ${cellStatusClass} ${zoneClass}">${locationId}</div>
+                <div class="level-badge">${locationId}</div>
                 <div class="level-detail">
                     ${products}
                 </div>

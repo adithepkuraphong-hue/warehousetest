@@ -240,8 +240,15 @@ $showInventoryToolbar = true;
             </div>
 
             <p style="font-size:0.78rem;color:var(--text-3);margin-top:12px;">
-                * เมื่อกดยืนยัน ระบบจะหักจำนวนออกจากฐานข้อมูลทันที และไม่สามารถยกเลิกได้
+                * เมื่อกดยืนยัน ระบบจะหักจำนวนออกจากฐานข้อมูล และสร้างใบสั่งผลิต (PR) ไปยังเครื่องจักรที่เลือก
             </p>
+            <div class="form-group" style="margin-top:14px;margin-bottom:0;">
+                <label>Destination เครื่องจักรปลายทาง</label>
+                <select id="dispatchDestination" required>
+                    <option value="Printer">Printer</option>
+                    <option value="Cutter">Cutter</option>
+                </select>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-cancel" onclick="closeDispatchModal()">ยกเลิก</button>
@@ -258,6 +265,7 @@ $showInventoryToolbar = true;
 ════════════════════════════════════════ -->
 <script>
     const API_URL = '/testapi/api/inventory.php';
+    const PRODUCTION_API_URL = '/testapi/api/production.php';
 
     let inventoryCachedData = [];
     let filteredData = [];
@@ -625,6 +633,7 @@ $showInventoryToolbar = true;
         const qtyInput = document.getElementById('dispatchQtyInput');
         qtyInput.max = item.quantity;
         qtyInput.value = 1;
+        document.getElementById('dispatchDestination').value = 'Printer';
         updateRemainingDisplay();
 
         document.getElementById('dispatchModal').classList.add('open');
@@ -661,7 +670,7 @@ $showInventoryToolbar = true;
         }
     }
 
-    function confirmDispatch() {
+    async function confirmDispatch() {
         if (!dispatchItem) return;
 
         const qtyToDispatch = parseInt(document.getElementById('dispatchQtyInput').value) || 0;
@@ -670,6 +679,7 @@ $showInventoryToolbar = true;
 
         const newQty = dispatchItem.quantity - qtyToDispatch;
         const newStatus = newQty === 0 ? 'Empty' : 'Keep';
+        const destination = document.getElementById('dispatchDestination').value;
 
         // Build update payload matching the existing PUT structure
         const payload = {
@@ -681,25 +691,49 @@ $showInventoryToolbar = true;
             warehouseCode: dispatchItem.warehouse || (dispatchItem.location_id || 'A').charAt(0),
             rowLocation: dispatchItem.row_location || 'A',
             columnLocation: parseInt(dispatchItem.column_location) || 1,
-            level: parseInt(dispatchItem.level) || 0
+            level: parseInt(dispatchItem.level) || 0,
+            logType: 'Outbound',
+            logAction: 'Dispatch To Production',
+            logSource: dispatchItem.location_id || 'Inventory',
+            logDestination: destination
         };
 
-        fetch(API_URL, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(r => r.json())
-        .then(res => {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const res = await response.json();
+
             if (res.status === 'success') {
-                showToast(`เบิกสินค้า "${dispatchItem.product_name}" จำนวน ${qtyToDispatch} ชิ้นสำเร็จ ✓`, 'success');
+                const prResponse = await fetch(PRODUCTION_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sourceInventoryId: dispatchItem.id,
+                        sourceProductId: dispatchItem.product_id,
+                        sourceProductName: dispatchItem.product_name,
+                        quantity: qtyToDispatch,
+                        machineType: destination
+                    })
+                });
+                const prRes = await prResponse.json();
+                if (prRes.status !== 'success') {
+                    showToast('หักสต็อกแล้ว แต่สร้าง PR ไม่สำเร็จ: ' + prRes.message, 'error');
+                    loadInventory();
+                    return;
+                }
+
+                showToast(`สร้าง ${prRes.pr_no} ไปยัง ${destination} สำเร็จ ✓`, 'success');
                 closeDispatchModal();
                 loadInventory();
             } else {
                 showToast('เบิกสินค้าไม่สำเร็จ: ' + res.message, 'error');
             }
-        })
-        .catch(err => showToast('เกิดข้อผิดพลาด: ' + err.message, 'error'));
+        } catch (err) {
+            showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+        }
     }
 
     // ─── LOCATION ID GENERATOR ───

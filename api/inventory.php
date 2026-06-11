@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 }
 
 require '../config.php';
+require __DIR__ . '/app_helpers.php';
 
 // Read input once and store globally
 $raw_input = file_get_contents("php://input");
@@ -209,6 +210,7 @@ function create() {
     
     if ($stmt->execute()) {
         http_response_code(201);
+        logOrderHistory($conn, 'Inbound', 'Create Inventory Item', 'Inventory', strval($conn->insert_id), $product_id, $product_name, $quantity, 'Manual Input', $location_id, $status, '');
         return array('status' => 'success', 'message' => 'Item created successfully', 'id' => $conn->insert_id);
     } else {
         if (strpos($stmt->error, 'Duplicate entry') !== false) {
@@ -346,6 +348,11 @@ function update() {
     
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
+            $log_type = isset($input['logType']) ? $input['logType'] : 'Inbound';
+            $log_action = isset($input['logAction']) ? $input['logAction'] : 'Update Inventory Item';
+            $log_source = isset($input['logSource']) ? $input['logSource'] : 'Inventory';
+            $log_destination = isset($input['logDestination']) ? $input['logDestination'] : ($location_id ?? '');
+            logOrderHistory($conn, $log_type, $log_action, 'Inventory', strval($id), $product_id ?? '', $product_name ?? '', $quantity ?? 0, $log_source, $log_destination, $status ?? 'Updated', '');
             return array('status' => 'success', 'message' => 'Item updated successfully');
         } else {
             http_response_code(404);
@@ -373,6 +380,12 @@ function delete() {
     }
     
     $id = intval($input['id']);
+
+    $item_sql = "SELECT product_id, product_name, quantity, location_id FROM inventory WHERE id = ?";
+    $item_stmt = $conn->prepare($item_sql);
+    $item_stmt->bind_param("i", $id);
+    $item_stmt->execute();
+    $item = $item_stmt->get_result()->fetch_assoc();
     
     $sql = "DELETE FROM inventory WHERE id = ?";
     $stmt = $conn->prepare($sql);
@@ -380,6 +393,9 @@ function delete() {
     
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
+            if ($item) {
+                logOrderHistory($conn, 'Outbound', 'Delete Inventory Item', 'Inventory', strval($id), $item['product_id'], $item['product_name'], $item['quantity'], $item['location_id'], 'Removed', 'Deleted', '');
+            }
             return array('status' => 'success', 'message' => 'Item deleted successfully');
         } else {
             http_response_code(404);

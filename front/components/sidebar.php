@@ -20,7 +20,17 @@
             <span class="nav-item-text">คลังสินค้า</span>
         </a>
 
-        <a class="nav-item" href="#" onclick="showComingSoon('Order History'); return false;">
+        <a class="nav-item <?php echo (($activePage ?? '') === 'production') ? 'active' : ''; ?>" href="/testapi/front/production.php">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4-1.4l7-7a1 1 0 011.4 0z"/><path d="M12 8l4 4m-9 4l1 4 4-1m6-16l3 3-4 4-3-3 4-4z"/></svg>
+            <span class="nav-item-text">Production</span>
+        </a>
+
+        <a class="nav-item <?php echo (($activePage ?? '') === 'fp') ? 'active' : ''; ?>" href="/testapi/front/fp_warehouse.php">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+            <span class="nav-item-text">FP Warehouse</span>
+        </a>
+
+        <a class="nav-item <?php echo (($activePage ?? '') === 'history') ? 'active' : ''; ?>" href="/testapi/front/order_history.php">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="nav-item-text">Order History</span>
         </a>
