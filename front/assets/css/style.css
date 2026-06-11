@@ -862,9 +862,8 @@ table tbody tr:hover { background: #fafbff; }
 
 .level-badge {
     min-height: 96px;
-    border: 2px solid #ef553a;
+    border: 2px solid;
     border-radius: 8px;
-    background: rgba(255,205,199,0.82);
     color: var(--text-1);
     display: flex;
     align-items: center;
@@ -872,6 +871,13 @@ table tbody tr:hover { background: #fafbff; }
     font-family: 'Chakra Petch', sans-serif;
     font-size: 1rem;
     font-weight: 800;
+    transition: all 0.2s ease;
+}
+
+.level-list .level-badge.is-empty {
+    background-color: #e5e7eb;
+    border-color: #9ca3af;
+    color: #6b7280;
 }
 
 .level-detail {
