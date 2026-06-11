@@ -614,18 +614,6 @@
             background: rgba(15,23,42,0.4); z-index: 190;
         }
 
-        /* ─────────── TOOLTIP ─────────── */
-        [data-tip] { position: relative; }
-        [data-tip]:hover::after {
-            content: attr(data-tip);
-            position: absolute; left: 50%; transform: translateX(-50%);
-            bottom: calc(100% + 6px);
-            background: #1e293b; color: white;
-            font-size: 0.72rem; white-space: nowrap;
-            padding: 4px 9px; border-radius: 5px;
-            pointer-events: none; z-index: 999;
-        }
-
         .search-highlight {
             background: #fef08a; border-radius: 2px; font-weight: 700;
         }
@@ -724,13 +712,17 @@
         </div>
 
         <!-- Filter toggle button -->
-        <button class="btn btn-ghost" onclick="toggleFilterBar()" id="filterToggleBtn" style="padding:8px 12px;" data-tip="แสดง/ซ่อน Filter">
+        <button class="btn btn-ghost" onclick="toggleFilterBar()" id="filterToggleBtn" style="padding:8px 12px;">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 4h18M7 12h10M11 20h2"/></svg>
             <span style="font-size:0.82rem;">Filter</span>
         </button>
 
-        <button class="btn-icon" onclick="loadInventory()" data-tip="รีเฟรช">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"/></svg>
+        <!--  Fix Refresh — pure SVG, no image render issue -->
+        <button class="btn-icon" onclick="loadInventory()">
+            <svg class="refresh-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
         </button>
 
         <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
