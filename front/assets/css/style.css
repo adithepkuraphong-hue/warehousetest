@@ -142,15 +142,6 @@ body {
 }
 .sidebar.collapsed .nav-item-text { opacity: 0; width: 0; }
 
-.nav-badge {
-    margin-left: auto; background: var(--primary); color: white;
-    font-size: 0.7rem; font-weight: 700;
-    padding: 2px 7px; border-radius: 20px;
-    flex-shrink: 0;
-    transition: opacity 0.2s;
-}
-.sidebar.collapsed .nav-badge { opacity: 0; }
-
 .sidebar-footer {
     padding: 12px 8px;
     border-top: 1px solid var(--border);
@@ -704,15 +695,15 @@ table tbody tr:hover { background: #fafbff; }
 .warehouse-overview {
     display: grid;
     grid-template-columns: repeat(2, minmax(320px, 1fr));
-    gap: 20px;
-    min-height: 420px;
+    gap: 14px;
+    min-height: 0;
 }
 
 .warehouse-block {
     border: 2px solid rgba(15,23,42,0.18);
     border-radius: 10px;
-    padding: 18px;
-    min-height: 560px;
+    padding: 14px;
+    min-height: 0;
     box-shadow: var(--shadow-sm);
 }
 
@@ -728,7 +719,7 @@ table tbody tr:hover { background: #fafbff; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .warehouse-block-header span {
@@ -744,7 +735,7 @@ table tbody tr:hover { background: #fafbff; }
 .warehouse-block-header strong {
     color: var(--text-1);
     font-family: 'Chakra Petch', sans-serif;
-    font-size: 2.4rem;
+    font-size: 1.8rem;
     line-height: 1;
 }
 
@@ -760,13 +751,13 @@ table tbody tr:hover { background: #fafbff; }
 .zone-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    gap: 10px;
 }
 
 .zone-column {
     display: grid;
     grid-template-rows: auto repeat(5, 1fr);
-    gap: 14px;
+    gap: 9px;
     min-width: 0;
 }
 
@@ -777,12 +768,12 @@ table tbody tr:hover { background: #fafbff; }
     color: var(--text-1);
     font-size: 0.8rem;
     font-weight: 800;
-    padding: 7px 8px;
+    padding: 5px 8px;
     text-align: center;
 }
 
 .location-cell {
-    aspect-ratio: 1 / 0.86;
+    min-height: 78px;
     width: 100%;
     border-radius: 8px;
     border: 2px solid;
@@ -793,9 +784,9 @@ table tbody tr:hover { background: #fafbff; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     font-family: inherit;
-    padding: 8px;
+    padding: 7px;
     transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
@@ -809,7 +800,7 @@ table tbody tr:hover { background: #fafbff; }
 
 .location-cell span {
     font-family: 'Chakra Petch', sans-serif;
-    font-size: 1.03rem;
+    font-size: 0.98rem;
     font-weight: 800;
 }
 
@@ -821,8 +812,23 @@ table tbody tr:hover { background: #fafbff; }
     white-space: normal;
 }
 
+.location-cell em {
+    color: var(--text-1);
+    font-style: normal;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
 .location-cell.is-empty {
-    opacity: 0.78;
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    color: #6b7280;
+    opacity: 1;
+}
+
+.location-cell.is-empty small,
+.location-cell.is-empty em {
+    color: #6b7280;
 }
 
 .zone-border-a { border-color: #ef553a; background-color: rgba(255,205,199,0.72); }
@@ -831,6 +837,12 @@ table tbody tr:hover { background: #fafbff; }
 .warehouse-b .zone-border-a { border-color: #707780; background-color: rgba(210,213,216,0.72); }
 .warehouse-b .zone-border-b { border-color: #f8c94d; background-color: rgba(255,240,190,0.76); }
 .warehouse-b .zone-border-c { border-color: #f051c6; background-color: rgba(255,201,239,0.76); }
+
+.warehouse-block .location-cell.is-empty {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    color: #6b7280;
+}
 
 .layout-modal-content {
     max-width: 920px;
@@ -911,9 +923,20 @@ table tbody tr:hover { background: #fafbff; }
 }
 
 @media (max-width: 1120px) {
-    .warehouse-overview,
     .layout-metrics {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .warehouse-overview {
+        grid-template-columns: repeat(2, minmax(520px, 1fr));
+        overflow-x: auto;
+        padding-bottom: 8px;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .warehouse-block {
+        scroll-snap-align: start;
     }
 }
 
@@ -923,14 +946,24 @@ table tbody tr:hover { background: #fafbff; }
         flex-direction: column;
     }
 
-    .layout-metrics,
-    .warehouse-overview {
+    .layout-metrics {
         grid-template-columns: 1fr;
     }
 
+    .warehouse-overview {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-inline: -16px;
+        padding: 0 16px 10px;
+        scroll-snap-type: x mandatory;
+    }
+
     .warehouse-block {
-        min-height: auto;
-        padding: 14px;
+        flex: 0 0 min(620px, 88vw);
+        scroll-snap-align: start;
+        padding: 12px;
     }
 
     .zone-grid {
@@ -942,7 +975,7 @@ table tbody tr:hover { background: #fafbff; }
     }
 
     .location-cell {
-        min-height: 76px;
+        min-height: 70px;
     }
 
     .level-row {

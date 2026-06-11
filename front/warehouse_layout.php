@@ -140,6 +140,7 @@ $showInventoryToolbar = false;
         const items = getLocationItems(warehouse, zone, row);
         const totalQty = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
         const occupiedLevels = new Set(items.map(item => Number(item.level || 0))).size;
+        const fillPercent = Math.round((occupiedLevels / levels.length) * 100);
         const locationLabel = `${warehouse}${zone}-${row}`;
         const isEmpty = items.length === 0;
 
@@ -147,7 +148,8 @@ $showInventoryToolbar = false;
             <button class="location-cell ${isEmpty ? 'is-empty' : 'is-filled'} zone-border-${zone.toLowerCase()}"
                 onclick="openLocationModal('${warehouse}', '${zone}', ${row})">
                 <span>${locationLabel}</span>
-                <small>${occupiedLevels}/4 Level · ${totalQty} ชิ้น</small>
+                <small>${isEmpty ? 'ว่าง' : `เต็ม ${fillPercent}% · ${occupiedLevels}/${levels.length} ชั้น`}</small>
+                <em>${totalQty.toLocaleString()} ชิ้น</em>
             </button>
         `;
     }
@@ -190,9 +192,10 @@ $showInventoryToolbar = false;
 
     function updateLayoutMetrics() {
         const occupied = new Set(layoutItems.map(item => `${item.warehouse}${item.row_location}-${item.column_location}`)).size;
+        const totalPositions = warehouses.length * zones.length * rows.length;
         const totalQty = layoutItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
         document.getElementById('layoutTotalItems').textContent = layoutItems.length.toLocaleString();
-        document.getElementById('layoutOccupiedCells').textContent = occupied.toLocaleString();
+        document.getElementById('layoutOccupiedCells').textContent = `${occupied}/${totalPositions}`;
         document.getElementById('layoutTotalQty').textContent = totalQty.toLocaleString();
     }
 

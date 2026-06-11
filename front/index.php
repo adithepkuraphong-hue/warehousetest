@@ -465,7 +465,6 @@ $showInventoryToolbar = true;
         document.getElementById('totalItems').textContent = total;
         document.getElementById('keepItems').textContent = keep;
         document.getElementById('emptyItems').textContent = empty;
-        document.getElementById('sidebarBadge').textContent = total;
     }
 
     // ─── EDIT MODE ───
