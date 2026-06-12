@@ -38,7 +38,11 @@ $showInventoryToolbar = false;
             </div>
             <div class="stat-card stat-keep">
                 <div class="stat-icon"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-                <div><div class="stat-label">In Progress</div><div class="stat-value" id="progressCount">0</div></div>
+                <div>
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-value" id="progressCount">0</div>
+                    <div class="stat-subline" id="progressMachines">No machine active</div>
+                </div>
             </div>
             <div class="stat-card stat-empty">
                 <div class="stat-icon"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
@@ -46,10 +50,21 @@ $showInventoryToolbar = false;
             </div>
         </section>
 
-        <section class="machine-board" id="machineBoard">
+        <section class="machine-picker">
+            <div>
+                <label for="machineSelector">เลือกเครื่องจักร</label>
+                <select id="machineSelector" onchange="selectMachine(this.value)">
+                    <option value="">-- เลือก Printer หรือ Cutter --</option>
+                    <option value="Printer">Printer</option>
+                    <option value="Cutter">Cutter</option>
+                </select>
+            </div>
+            <div class="machine-hint" id="machineHint">เลือกเครื่องเพื่อแสดงหน้าจอรับงานและฟิลด์ที่เกี่ยวข้อง</div>
+        </section>
+
+        <section class="machine-board machine-board-single" id="machineBoard">
             <div class="state-container">
-                <div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div>
-                <p>กำลังโหลดรายการผลิต...</p>
+                <p>กรุณาเลือกเครื่องจักรก่อนเริ่มงาน</p>
             </div>
         </section>
     </main>
@@ -65,11 +80,57 @@ $showInventoryToolbar = false;
             <div class="dispatch-info-grid" id="completeInfo"></div>
             <div class="form-group" style="margin-bottom:0;">
                 <label>ส่งชิ้นงานต่อไปที่</label>
-                <select id="completeDestination">
+                <select id="completeDestination" onchange="toggleFpLocationFields()">
                     <option value="FP Warehouse">FP Warehouse</option>
                     <option value="Printer">Printer</option>
                     <option value="Cutter">Cutter</option>
                 </select>
+            </div>
+            <div class="fp-location-panel" id="fpLocationPanel">
+                <div class="form-section-title" style="margin-top:18px;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+                    ตำแหน่งจัดเก็บ FP Warehouse
+                </div>
+                <div class="form-grid form-grid-compact">
+                    <div class="form-group">
+                        <label>อาคารคลังสินค้า</label>
+                        <select id="fpWarehouseCode" onchange="generateFpLocationId()">
+                            <option value="A">คลังสินค้า A</option>
+                            <option value="B">คลังสินค้า B</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>โซน (Zone)</label>
+                        <select id="fpRowLocation" onchange="generateFpLocationId()">
+                            <option value="A">โซน A</option>
+                            <option value="B">โซน B</option>
+                            <option value="C">โซน C</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>แถว (Row)</label>
+                        <select id="fpColumnLocation" onchange="generateFpLocationId()">
+                            <option value="1">แถว 1</option>
+                            <option value="2">แถว 2</option>
+                            <option value="3">แถว 3</option>
+                            <option value="4">แถว 4</option>
+                            <option value="5">แถว 5</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ชั้นความสูง (Level)</label>
+                        <select id="fpLevel" onchange="generateFpLocationId()">
+                            <option value="0">ชั้น 0 (พื้นดิน)</option>
+                            <option value="1">ชั้น 1</option>
+                            <option value="2">ชั้น 2</option>
+                            <option value="3">ชั้น 3</option>
+                        </select>
+                    </div>
+                    <div class="form-group fp-location-id-field">
+                        <label>รหัสพิกัด (Location ID)</label>
+                        <input type="text" id="fpLocationId" readonly>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="modal-footer">
@@ -87,14 +148,16 @@ $showInventoryToolbar = false;
     let orders = [];
     let completingOrder = null;
     let sidebarCollapsed = false;
+    let selectedMachine = '';
 
     document.addEventListener('DOMContentLoaded', () => {
         loadProduction();
         setupMobileDetect();
-        setInterval(loadProduction, 8000);
+        window.LiveUpdates?.on('production.changed', () => loadProduction({ silent: true }));
+        setInterval(() => loadProduction({ silent: true }), 30000);
     });
 
-    function loadProduction() {
+    function loadProduction(options = {}) {
         fetch(API_URL)
             .then(r => r.json())
             .then(res => {
@@ -109,13 +172,21 @@ $showInventoryToolbar = false;
     }
 
     function updateStats() {
+        const inProgress = orders.filter(o => o.status === 'กำลังผลิต');
+        const activeMachines = [...new Set(inProgress.map(o => o.machine_type))];
         document.getElementById('pendingCount').textContent = orders.filter(o => o.status === 'รอผลิต').length;
-        document.getElementById('progressCount').textContent = orders.filter(o => o.status === 'กำลังผลิต').length;
+        document.getElementById('progressCount').textContent = inProgress.length;
         document.getElementById('completedCount').textContent = orders.filter(o => o.status === 'เสร็จสิ้น').length;
+        document.getElementById('progressMachines').textContent = activeMachines.length ? activeMachines.join(', ') : 'No machine active';
     }
 
     function renderMachineBoard() {
-        document.getElementById('machineBoard').innerHTML = machines.map(machine => {
+        if (!selectedMachine) {
+            document.getElementById('machineBoard').innerHTML = '<div class="state-container"><p>กรุณาเลือกเครื่องจักรก่อนเริ่มงาน</p></div>';
+            return;
+        }
+
+        document.getElementById('machineBoard').innerHTML = [selectedMachine].map(machine => {
             const machineOrders = orders.filter(o => o.machine_type === machine && o.status !== 'เสร็จสิ้น');
             return `
                 <article class="machine-column">
@@ -129,6 +200,15 @@ $showInventoryToolbar = false;
                 </article>
             `;
         }).join('');
+    }
+
+    function selectMachine(machine) {
+        selectedMachine = machine;
+        const hint = document.getElementById('machineHint');
+        hint.textContent = machine
+            ? `${machine} พร้อมแสดงงานรอผลิตและงานที่กำลังทำอยู่`
+            : 'เลือกเครื่องเพื่อแสดงหน้าจอรับงานและฟิลด์ที่เกี่ยวข้อง';
+        renderMachineBoard();
     }
 
     function renderOrderCard(order) {
@@ -146,7 +226,7 @@ $showInventoryToolbar = false;
                 </div>
                 <div class="pr-actions">
                     ${order.status === 'รอผลิต' ? `<button class="btn-row btn-row-dispatch" onclick="claimOrder(${Number(order.id)})">รับการผลิต</button>` : ''}
-                    ${order.status === 'กำลังผลิต' ? `<button class="btn-row btn-row-edit" onclick="openCompleteModal(${Number(order.id)})">เสร็จสิ้น</button>` : ''}
+                    ${order.status === 'กำลังผลิต' ? `<button class="btn-row btn-row-delete" onclick="cancelOrder(${Number(order.id)})">ยกเลิกการรับงาน</button><button class="btn-row btn-row-edit" onclick="openCompleteModal(${Number(order.id)})">เสร็จสิ้น</button>` : ''}
                 </div>
             </div>
         `;
@@ -166,6 +246,20 @@ $showInventoryToolbar = false;
         .catch(err => showToast(err.message, 'error'));
     }
 
+    function cancelOrder(id) {
+        fetch(API_URL, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, action: 'cancel' })
+        })
+        .then(r => r.json())
+        .then(res => {
+            showToast(res.status === 'success' ? 'ยกเลิกการรับงานแล้ว' : res.message, res.status === 'success' ? 'success' : 'error');
+            loadProduction();
+        })
+        .catch(err => showToast(err.message, 'error'));
+    }
+
     function openCompleteModal(id) {
         completingOrder = orders.find(o => Number(o.id) === Number(id));
         if (!completingOrder) return;
@@ -176,6 +270,8 @@ $showInventoryToolbar = false;
             <option value="${nextMachine}">${nextMachine}</option>
         `;
         document.getElementById('completeDestination').value = 'FP Warehouse';
+        toggleFpLocationFields();
+        generateFpLocationId();
         document.getElementById('completeInfo').innerHTML = `
             <div class="dispatch-info-item"><div class="di-label">สินค้า</div><div class="di-value">${escHtml(completingOrder.final_product_name)}</div></div>
             <div class="dispatch-info-item"><div class="di-label">จำนวน</div><div class="di-value">${Number(completingOrder.quantity).toLocaleString()} ชิ้น</div></div>
@@ -191,14 +287,24 @@ $showInventoryToolbar = false;
 
     function confirmComplete() {
         if (!completingOrder) return;
+        const destination = document.getElementById('completeDestination').value;
+        const payload = {
+            id: Number(completingOrder.id),
+            action: 'complete',
+            destination
+        };
+
+        if (destination === 'FP Warehouse') {
+            payload.fpWarehouseCode = document.getElementById('fpWarehouseCode').value;
+            payload.fpRowLocation = document.getElementById('fpRowLocation').value;
+            payload.fpColumnLocation = Number(document.getElementById('fpColumnLocation').value);
+            payload.fpLevel = Number(document.getElementById('fpLevel').value);
+        }
+
         fetch(API_URL, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: Number(completingOrder.id),
-                action: 'complete',
-                destination: document.getElementById('completeDestination').value
-            })
+            body: JSON.stringify(payload)
         })
         .then(r => r.json())
         .then(res => {
@@ -207,6 +313,19 @@ $showInventoryToolbar = false;
             loadProduction();
         })
         .catch(err => showToast(err.message, 'error'));
+    }
+
+    function toggleFpLocationFields() {
+        const show = document.getElementById('completeDestination').value === 'FP Warehouse';
+        document.getElementById('fpLocationPanel').style.display = show ? 'block' : 'none';
+    }
+
+    function generateFpLocationId() {
+        const wh = document.getElementById('fpWarehouseCode').value;
+        const zone = document.getElementById('fpRowLocation').value;
+        const row = document.getElementById('fpColumnLocation').value;
+        const level = document.getElementById('fpLevel').value;
+        document.getElementById('fpLocationId').value = `${wh}${zone}-${row}-${level}`;
     }
 
     function toggleSidebar() {
@@ -234,5 +353,6 @@ $showInventoryToolbar = false;
     window.addEventListener('click', e => { if (e.target.id === 'completeModal') closeCompleteModal(); });
     function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
+<script src="assets/js/live-updates.js"></script>
 </body>
 </html>

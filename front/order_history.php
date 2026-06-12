@@ -28,6 +28,29 @@ $showInventoryToolbar = false;
             <div class="live-pill"><span></span>Live update</div>
         </section>
 
+        <section class="history-filters">
+            <div class="form-group">
+                <label>วันที่เริ่มต้น</label>
+                <input type="date" id="filterDateFrom" onchange="loadAllHistory()">
+            </div>
+            <div class="form-group">
+                <label>วันที่สิ้นสุด</label>
+                <input type="date" id="filterDateTo" onchange="loadAllHistory()">
+            </div>
+            <div class="form-group">
+                <label>ประเภทรายการ</label>
+                <select id="filterLogType" onchange="loadAllHistory()">
+                    <option value="">ทั้งหมด</option>
+                    <option value="Inbound">Inbound</option>
+                    <option value="Outbound">Outbound</option>
+                </select>
+            </div>
+            <div class="history-filter-actions">
+                <button class="btn btn-primary" onclick="loadAllHistory()">กรองข้อมูล</button>
+                <button class="btn btn-ghost" onclick="clearHistoryFilters()">ล้างตัวกรอง</button>
+            </div>
+        </section>
+
         <section class="ops-grid history-grid">
             <div class="main-card">
                 <div class="ops-card-head">
@@ -55,23 +78,54 @@ $showInventoryToolbar = false;
     let latestIds = { Inbound: 0, Outbound: 0 };
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadHistory('Inbound');
-        loadHistory('Outbound');
+        loadAllHistory();
         setupMobileDetect();
-        setInterval(() => {
-            loadHistory('Inbound');
-            loadHistory('Outbound');
-        }, 5000);
+        window.LiveUpdates?.on('history.changed', () => loadAllHistory());
+        setInterval(loadAllHistory, 30000);
     });
 
     function loadHistory(type) {
-        fetch(`${API_URL}?type=${encodeURIComponent(type)}&limit=80`)
+        const params = getHistoryParams(type);
+        fetch(`${API_URL}?${params.toString()}`)
             .then(r => r.json())
             .then(res => {
                 if (res.status !== 'success') throw new Error(res.message || 'Load failed');
                 renderLog(type, res.data);
             })
             .catch(err => showToast(err.message, 'error'));
+    }
+
+    function loadAllHistory() {
+        const selectedType = document.getElementById('filterLogType').value;
+        if (!selectedType || selectedType === 'Inbound') {
+            loadHistory('Inbound');
+        } else {
+            renderLog('Inbound', []);
+        }
+        if (!selectedType || selectedType === 'Outbound') {
+            loadHistory('Outbound');
+        } else {
+            renderLog('Outbound', []);
+        }
+    }
+
+    function getHistoryParams(type) {
+        const params = new URLSearchParams({
+            type,
+            limit: '80'
+        });
+        const dateFrom = document.getElementById('filterDateFrom').value;
+        const dateTo = document.getElementById('filterDateTo').value;
+        if (dateFrom) params.set('date_from', dateFrom);
+        if (dateTo) params.set('date_to', dateTo);
+        return params;
+    }
+
+    function clearHistoryFilters() {
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        document.getElementById('filterLogType').value = '';
+        loadAllHistory();
     }
 
     function renderLog(type, rows) {
@@ -127,5 +181,6 @@ $showInventoryToolbar = false;
     }
     function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
+<script src="assets/js/live-updates.js"></script>
 </body>
 </html>

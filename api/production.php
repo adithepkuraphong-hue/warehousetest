@@ -110,6 +110,8 @@ function createProductionOrder($conn, $input) {
 
     $new_id = $conn->insert_id;
     logOrderHistory($conn, 'Outbound', 'Create Production Order', 'PR', $pr_no, $source_product_id, $source_product_name, $quantity, 'Raw Material Warehouse', $machine, 'รอผลิต', 'Created from dispatch');
+    emitLiveUpdate('production.changed', array('action' => 'create', 'id' => $new_id, 'machine' => $machine));
+    emitLiveUpdate('history.changed', array('action' => 'create'));
 
     jsonResponse(array('status' => 'success', 'message' => 'Production order created', 'id' => $new_id, 'pr_no' => $pr_no), 201);
 }
@@ -128,6 +130,10 @@ function updateProductionOrder($conn, $input) {
 
     if ($action === 'claim') {
         claimOrder($conn, $order);
+    }
+
+    if ($action === 'cancel') {
+        cancelOrder($conn, $order);
     }
 
     if ($action === 'complete') {
@@ -149,7 +155,26 @@ function claimOrder($conn, $order) {
     $stmt->execute();
 
     logOrderHistory($conn, 'Outbound', 'Claim Production Order', 'PR', $order['pr_no'], $order['source_product_id'], $order['source_product_name'], $order['quantity'], $order['machine_type'], $order['machine_type'], 'กำลังผลิต', '');
+    emitLiveUpdate('production.changed', array('action' => 'claim', 'id' => $id));
+    emitLiveUpdate('history.changed', array('action' => 'claim'));
     jsonResponse(array('status' => 'success', 'message' => 'Order claimed'));
+}
+
+function cancelOrder($conn, $order) {
+    if ($order['status'] !== 'กำลังผลิต') {
+        jsonResponse(array('status' => 'error', 'message' => 'Only in-progress orders can be canceled'), 400);
+    }
+
+    $sql = "UPDATE production_orders SET status = 'รอผลิต', claimed_at = NULL WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $id = intval($order['id']);
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
+    logOrderHistory($conn, 'Inbound', 'Cancel Production Claim', 'PR', $order['pr_no'], $order['source_product_id'], $order['source_product_name'], $order['quantity'], $order['machine_type'], 'Production Queue', 'รอผลิต', 'Canceled by operator');
+    emitLiveUpdate('production.changed', array('action' => 'cancel', 'id' => $id));
+    emitLiveUpdate('history.changed', array('action' => 'cancel'));
+    jsonResponse(array('status' => 'success', 'message' => 'Order moved back to pending'));
 }
 
 function completeOrder($conn, $order, $input) {
@@ -179,13 +204,24 @@ function completeOrder($conn, $order, $input) {
         $stmt->execute();
 
         if ($destination === 'FP Warehouse') {
-            $sql_fp = "INSERT INTO FDwarehouse (pr_no, fp_product_id, fp_product_name, quantity, source_machine) VALUES (?, ?, ?, ?, ?)";
+            $warehouse = isset($input['fpWarehouseCode']) ? strtoupper($input['fpWarehouseCode']) : 'A';
+            $zone = isset($input['fpRowLocation']) ? strtoupper($input['fpRowLocation']) : 'A';
+            $row = isset($input['fpColumnLocation']) ? intval($input['fpColumnLocation']) : 1;
+            $level = isset($input['fpLevel']) ? intval($input['fpLevel']) : 0;
+            $location_error = validateFpLocation($warehouse, $zone, $row, $level);
+            if ($location_error) {
+                throw new Exception($location_error);
+            }
+            $location_id = generateFpLocationId($warehouse, $zone, $row, $level);
+
+            $sql_fp = "INSERT INTO FDwarehouse (pr_no, fp_product_id, fp_product_name, quantity, source_machine, warehouse, row_location, column_location, level, location_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_fp = $conn->prepare($sql_fp);
             $qty = intval($order['quantity']);
-            $stmt_fp->bind_param("sssis", $order['pr_no'], $order['final_product_id'], $order['final_product_name'], $qty, $order['machine_type']);
+            $stmt_fp->bind_param("sssisssiis", $order['pr_no'], $order['final_product_id'], $order['final_product_name'], $qty, $order['machine_type'], $warehouse, $zone, $row, $level, $location_id);
             $stmt_fp->execute();
 
-            logOrderHistory($conn, 'Inbound', 'Receive Final Product', 'PR', $order['pr_no'], $order['final_product_id'], $order['final_product_name'], $order['quantity'], $order['machine_type'], 'FP Warehouse', 'Received', '');
+            logOrderHistory($conn, 'Inbound', 'Receive Final Product', 'PR', $order['pr_no'], $order['final_product_id'], $order['final_product_name'], $order['quantity'], $order['machine_type'], 'FP Warehouse ' . $location_id, 'Received', '');
         } else {
             $next_input = array(
                 'sourceProductId' => $order['final_product_id'],
@@ -211,6 +247,9 @@ function completeOrder($conn, $order, $input) {
 
         logOrderHistory($conn, 'Outbound', 'Complete Production Order', 'PR', $order['pr_no'], $order['source_product_id'], $order['source_product_name'], $order['quantity'], $order['machine_type'], $destination, 'เสร็จสิ้น', '');
         $conn->commit();
+        emitLiveUpdate('production.changed', array('action' => 'complete', 'id' => $id, 'destination' => $destination));
+        emitLiveUpdate('fp.changed', array('action' => 'receive', 'id' => $id, 'destination' => $destination));
+        emitLiveUpdate('history.changed', array('action' => 'complete'));
     } catch (Exception $e) {
         $conn->rollback();
         jsonResponse(array('status' => 'error', 'message' => $e->getMessage()), 500);
@@ -239,5 +278,26 @@ function generatePrNo($conn) {
     } while ($exists);
 
     return $pr_no;
+}
+
+function generateFpLocationId($warehouse, $zone, $row, $level) {
+    return strtoupper($warehouse) . strtoupper($zone) . '-' . $row . '-' . $level;
+}
+
+function validateFpLocation($warehouse, $zone, $row, $level) {
+    if (!preg_match('/^[A-B]$/', $warehouse)) {
+        return 'FP warehouse must be A or B';
+    }
+    if (!preg_match('/^[A-C]$/', $zone)) {
+        return 'FP zone must be A, B, or C';
+    }
+    if ($row < 1 || $row > 5) {
+        return 'FP row must be between 1 and 5';
+    }
+    if ($level < 0 || $level > 3) {
+        return 'FP level must be between 0 and 3';
+    }
+
+    return null;
 }
 ?>

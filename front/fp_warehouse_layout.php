@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Warehouse Layout Overview</title>
+    <title>FP Warehouse Layout Overview</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <?php
-$activePage = 'layout';
-$pageTitle = 'Warehouse Layout';
+$activePage = 'fp_layout';
+$pageTitle = 'FP Warehouse Layout';
 $showInventoryToolbar = false;
 ?>
 
@@ -23,8 +23,8 @@ $showInventoryToolbar = false;
     <main class="page-content layout-page">
         <section class="layout-summary">
             <div>
-                <p class="layout-kicker">Overview</p>
-                <h1>ภาพรวมตำแหน่งสินค้าในโกดัง</h1>
+                <p class="layout-kicker">Final Product Overview</p>
+                <h1>ภาพรวมตำแหน่งสินค้าสำเร็จรูป</h1>
             </div>
             <div class="layout-actions">
                 <button class="btn btn-ghost" onclick="loadLayoutData()">
@@ -37,9 +37,9 @@ $showInventoryToolbar = false;
             </div>
         </section>
 
-        <section class="layout-metrics" aria-label="Warehouse summary">
+        <section class="layout-metrics" aria-label="FP warehouse summary">
             <div class="layout-metric">
-                <span>สินค้าทั้งหมด</span>
+                <span>FP Lots ทั้งหมด</span>
                 <strong id="layoutTotalItems">0</strong>
             </div>
             <div class="layout-metric">
@@ -51,15 +51,15 @@ $showInventoryToolbar = false;
                 <strong id="layoutTotalQty">0</strong>
             </div>
             <div class="layout-legend">
-                <span><i class="legend-dot legend-a"></i>Warehouse A</span>
-                <span><i class="legend-dot legend-b"></i>Warehouse B</span>
+                <span><i class="legend-dot legend-a"></i>FP Warehouse A</span>
+                <span><i class="legend-dot legend-b"></i>FP Warehouse B</span>
             </div>
         </section>
 
         <section class="warehouse-overview" id="warehouseOverview">
             <div class="state-container">
                 <div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div>
-                <p>กำลังโหลดแผนผังโกดัง...</p>
+                <p>กำลังโหลดแผนผังคลัง FP...</p>
             </div>
         </section>
     </main>
@@ -80,7 +80,7 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/inventory.php';
+    const API_URL = '/testapi/api/fp_warehouse_layout.php';
     const warehouses = ['A', 'B'];
     const zones = ['A', 'B', 'C'];
     const rows = [1, 2, 3, 4, 5];
@@ -91,12 +91,12 @@ $showInventoryToolbar = false;
     document.addEventListener('DOMContentLoaded', () => {
         loadLayoutData();
         setupMobileDetect();
-        window.LiveUpdates?.on('inventory.changed', () => loadLayoutData());
+        window.LiveUpdates?.on('fp.changed', () => loadLayoutData());
     });
 
     function loadLayoutData() {
         const overview = document.getElementById('warehouseOverview');
-        overview.innerHTML = `<div class="state-container"><div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div><p>กำลังโหลดแผนผังโกดัง...</p></div>`;
+        overview.innerHTML = `<div class="state-container"><div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div><p>กำลังโหลดแผนผังคลัง FP...</p></div>`;
 
         fetch(API_URL, { method: 'GET' })
             .then(r => r.json())
@@ -119,7 +119,7 @@ $showInventoryToolbar = false;
                 <article class="warehouse-block warehouse-${warehouse.toLowerCase()}">
                     <div class="warehouse-block-header">
                         <div>
-                            <span>Warehouse</span>
+                            <span>FP Warehouse</span>
                             <strong>${warehouse}</strong>
                         </div>
                         <small>${totalQty.toLocaleString()} ชิ้น</small>
@@ -156,9 +156,8 @@ $showInventoryToolbar = false;
     }
 
     function openLocationModal(warehouse, zone, row) {
-        document.getElementById('layoutModalTitle').textContent = `Warehouse-${warehouse} Zone-${zone} Row-${row} LID: ${warehouse}${zone}-${row}-XX`;
-        const list = document.getElementById('levelList');
-        list.innerHTML = levels.map(level => renderLevelCard(warehouse, zone, row, level)).join('');
+        document.getElementById('layoutModalTitle').textContent = `FP Warehouse-${warehouse} Zone-${zone} Row-${row} LID: ${warehouse}${zone}-${row}-XX`;
+        document.getElementById('levelList').innerHTML = levels.map(level => renderLevelCard(warehouse, zone, row, level)).join('');
         document.getElementById('layoutModal').classList.add('open');
     }
 
@@ -170,7 +169,7 @@ $showInventoryToolbar = false;
                 <div class="level-product">
                     <div>
                         <strong>${escHtml(item.product_id)}</strong>
-                        <span>${escHtml(item.product_name)}</span>
+                        <span>${escHtml(item.product_name)} · ${escHtml(item.pr_no || '')}</span>
                     </div>
                     <b>${Number(item.quantity || 0).toLocaleString()} ชิ้น</b>
                 </div>
@@ -214,37 +213,19 @@ $showInventoryToolbar = false;
 
     function toggleSidebar() {
         sidebarCollapsed = !sidebarCollapsed;
-        const sidebar = document.getElementById('sidebar');
-        const wrapper = document.getElementById('mainWrapper');
-        const chevron = document.getElementById('sidebarChevron');
-        sidebar.classList.toggle('collapsed', sidebarCollapsed);
-        wrapper.classList.toggle('collapsed', sidebarCollapsed);
-        chevron.style.transform = sidebarCollapsed ? 'rotate(180deg)' : '';
+        document.getElementById('sidebar').classList.toggle('collapsed', sidebarCollapsed);
+        document.getElementById('mainWrapper').classList.toggle('collapsed', sidebarCollapsed);
+        document.getElementById('sidebarChevron').style.transform = sidebarCollapsed ? 'rotate(180deg)' : '';
     }
-
-    function openMobileSidebar() {
-        document.getElementById('sidebar').classList.add('mobile-open');
-        document.getElementById('mobileOverlay').style.display = 'block';
-    }
-
-    function closeMobileSidebar() {
-        document.getElementById('sidebar').classList.remove('mobile-open');
-        document.getElementById('mobileOverlay').style.display = 'none';
-    }
-
+    function openMobileSidebar() { document.getElementById('sidebar').classList.add('mobile-open'); document.getElementById('mobileOverlay').style.display = 'block'; }
+    function closeMobileSidebar() { document.getElementById('sidebar').classList.remove('mobile-open'); document.getElementById('mobileOverlay').style.display = 'none'; }
     function setupMobileDetect() {
         const mq = window.matchMedia('(max-width: 768px)');
-        const update = (e) => {
-            document.getElementById('mobileMenuBtn').style.display = e.matches ? 'flex' : 'none';
-        };
+        const update = e => { document.getElementById('mobileMenuBtn').style.display = e.matches ? 'flex' : 'none'; };
         mq.addEventListener('change', update);
         update(mq);
     }
-
-    function showComingSoon(name) {
-        showToast(`${name} - เร็วๆ นี้`, 'warning');
-    }
-
+    function showComingSoon(name) { showToast(`${name} - เร็วๆ นี้`, 'warning'); }
     function showToast(msg, type = 'success') {
         const el = document.getElementById('toastAlert');
         el.className = `toast toast-${type} show`;
@@ -252,14 +233,8 @@ $showInventoryToolbar = false;
         clearTimeout(el._timer);
         el._timer = setTimeout(() => el.classList.remove('show'), 3800);
     }
-
-    window.addEventListener('click', e => {
-        if (e.target.id === 'layoutModal') closeLayoutModal();
-    });
-
-    function escHtml(s) {
-        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
+    window.addEventListener('click', e => { if (e.target.id === 'layoutModal') closeLayoutModal(); });
+    function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 <script src="assets/js/live-updates.js"></script>
 </body>

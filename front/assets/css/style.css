@@ -422,6 +422,17 @@ body {
     line-height: 1.2;
 }
 
+.stat-subline {
+    color: var(--text-3);
+    font-size: 0.74rem;
+    font-weight: 700;
+    margin-top: 2px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* ─────────── TOOLBAR ROW ─────────── */
 .toolbar {
     display: flex;
@@ -479,6 +490,18 @@ body {
     background: var(--primary-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-new-order {
+    background: linear-gradient(135deg, #2563eb, #14b8a6);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
+    padding-inline: 18px;
+}
+
+.btn-new-order:hover {
+    background: linear-gradient(135deg, #1d4ed8, #0f766e);
+    box-shadow: 0 12px 28px rgba(20, 184, 166, 0.28);
 }
 
 .btn-success {
@@ -577,6 +600,36 @@ table th {
     letter-spacing: 0.05em;
     border-bottom: 1px solid var(--border);
     white-space: nowrap;
+}
+
+.sort-header {
+    width: 100%;
+    min-height: 22px;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    font: inherit;
+    letter-spacing: inherit;
+    padding: 0;
+    text-align: left;
+    text-transform: inherit;
+    white-space: nowrap;
+}
+
+.sort-header span {
+    color: #94a3b8;
+    font-size: 0.7rem;
+    line-height: 1;
+}
+
+.sort-header.active,
+.sort-header.active span {
+    color: var(--primary);
 }
 
 table td {
@@ -818,6 +871,22 @@ table tbody tr:hover {
     display: grid;
     grid-template-columns: 1fr;
     gap: 20px;
+}
+
+.form-grid-compact {
+    gap: 12px;
+}
+
+.fp-location-panel {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-top: 16px;
+    padding: 14px;
+}
+
+.fp-location-id-field {
+    grid-column: 1 / -1;
 }
 
 @media (min-width: 600px) {
@@ -1084,6 +1153,26 @@ table tbody tr:hover {
     .dispatch-info-grid {
         grid-template-columns: 1fr 1fr;
     }
+
+    .machine-picker,
+    .history-filters {
+        align-items: stretch;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .machine-picker > div:first-child {
+        min-width: 0;
+    }
+
+    .ops-grid,
+    .history-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .history-filter-actions {
+        justify-content: flex-start;
+    }
 }
 
 .mobile-overlay {
@@ -1144,6 +1233,80 @@ table tbody tr:hover {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
+}
+
+.machine-board-single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.machine-picker,
+.history-filters {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: end;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 14px 16px;
+}
+
+.machine-picker > div:first-child {
+    min-width: 260px;
+}
+
+.machine-picker label,
+.history-filters label {
+    display: block;
+    color: var(--text-2);
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.machine-picker select,
+.history-filters input,
+.history-filters select {
+    width: 100%;
+    min-height: 38px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    color: var(--text-1);
+    font-family: inherit;
+    font-size: 0.86rem;
+    outline: none;
+    padding: 8px 10px;
+}
+
+.machine-picker select:focus,
+.history-filters input:focus,
+.history-filters select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.machine-hint {
+    color: var(--text-3);
+    font-size: 0.84rem;
+    font-weight: 700;
+    padding-bottom: 9px;
+}
+
+.history-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(140px, 1fr)) auto;
+}
+
+.history-filters .form-group {
+    margin-bottom: 0;
+}
+
+.history-filter-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
 }
 
 .machine-column {
@@ -1707,9 +1870,21 @@ table tbody tr:hover {
         scroll-snap-type: x mandatory;
     }
 
+    .machine-board-single {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin-inline: 0;
+        overflow-x: visible;
+        padding: 0;
+    }
+
     .machine-column {
         flex: 0 0 min(520px, 88vw);
         scroll-snap-align: start;
+    }
+
+    .machine-board-single .machine-column {
+        flex: initial;
     }
 
     .layout-summary {

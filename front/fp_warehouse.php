@@ -72,7 +72,8 @@ $showInventoryToolbar = false;
     document.addEventListener('DOMContentLoaded', () => {
         loadFPWarehouse();
         setupMobileDetect();
-        setInterval(loadFPWarehouse, 10000);
+        window.LiveUpdates?.on('fp.changed', () => loadFPWarehouse());
+        setInterval(loadFPWarehouse, 30000);
     });
 
     function loadFPWarehouse() {
@@ -103,11 +104,12 @@ $showInventoryToolbar = false;
         ` : emptyState('ยังไม่มีสินค้าสำเร็จรูป');
 
         document.getElementById('fpLotTable').innerHTML = lots.length ? `
-            <table><thead><tr><th>PR</th><th>FP</th><th>จำนวน</th><th>เครื่องต้นทาง</th><th>รับเข้า</th></tr></thead><tbody>
+            <table><thead><tr><th>PR</th><th>FP</th><th>จำนวน</th><th>Location</th><th>เครื่องต้นทาง</th><th>รับเข้า</th></tr></thead><tbody>
             ${lots.map(item => `<tr>
                 <td style="font-weight:700;">${escHtml(item.pr_no)}</td>
                 <td>${escHtml(item.fp_product_name)}<br><span class="text-muted">${escHtml(item.fp_product_id)}</span></td>
                 <td style="font-weight:800;">${Number(item.quantity).toLocaleString()}</td>
+                <td><span class="location-tag">${escHtml(item.location_id || '-')}</span></td>
                 <td><span class="badge badge-success">${escHtml(item.source_machine)}</span></td>
                 <td class="text-muted">${formatDate(item.received_at)}</td>
             </tr>`).join('')}
@@ -141,5 +143,6 @@ $showInventoryToolbar = false;
     }
     function escHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
+<script src="assets/js/live-updates.js"></script>
 </body>
 </html>

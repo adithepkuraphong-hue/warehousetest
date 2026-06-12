@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS inventory (
     product_id VARCHAR(50) NOT NULL UNIQUE,
     product_name VARCHAR(255) NOT NULL,
     quantity INT NOT NULL DEFAULT 0,
-    status ENUM('Keep', 'Empty') NOT NULL DEFAULT 'Keep',
+    status ENUM('In Stock', 'Out Stock') NOT NULL DEFAULT 'In Stock',
     warehouse VARCHAR(1) DEFAULT 'A',
     row_location VARCHAR(1) DEFAULT 'A',
     column_location INT DEFAULT 1,
@@ -50,10 +50,16 @@ CREATE TABLE IF NOT EXISTS FDwarehouse (
     fp_product_name VARCHAR(255) NOT NULL,
     quantity INT NOT NULL DEFAULT 0,
     source_machine VARCHAR(20) NOT NULL,
+    warehouse VARCHAR(1) DEFAULT 'A',
+    row_location VARCHAR(1) DEFAULT 'A',
+    column_location INT DEFAULT 1,
+    level INT DEFAULT 0,
+    location_id VARCHAR(20),
     received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_fp_product_id (fp_product_id),
-    INDEX idx_pr_no (pr_no)
+    INDEX idx_pr_no (pr_no),
+    INDEX idx_fd_location_id (location_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS OrderHis (
@@ -89,6 +95,6 @@ WHERE warehouse NOT IN ('A', 'B');
 
 -- Sample data (optional)
 INSERT IGNORE INTO inventory (product_id, product_name, quantity, status, warehouse, row_location, column_location, level, location_id) VALUES 
-('P001', 'สินค้า A', 100, 'Keep', 'A', 'A', 1, 0, 'AA-1-0'),
-('P002', 'สินค้า B', 50, 'Keep', 'B', 'B', 2, 1, 'BB-2-1'),
-('P003', 'สินค้า C', 0, 'Empty', 'B', 'C', 3, 2, 'BC-3-2');
+('P001', 'Paper', 100, 'In Stock', 'A', 'A', 1, 0, 'AA-1-0'),
+('P002', 'Wood', 50, 'In Stock', 'B', 'B', 2, 1, 'BB-2-1'),
+('P003', 'Plastic', 0, 'Out Stock', 'B', 'C', 3, 2, 'BC-3-2');

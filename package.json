@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "ws": "node ws-server.js"
+  },
+  "dependencies": {}
+}

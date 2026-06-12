@@ -40,6 +40,11 @@
             <span class="nav-item-text">Warehouse Layout</span>
         </a>
 
+        <a class="nav-item <?php echo (($activePage ?? '') === 'fp_layout') ? 'active' : ''; ?>" href="/testapi/front/fp_warehouse_layout.php">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v7H3z"/><path d="M3 14h8v7H3zM15 14h6v7h-6z"/></svg>
+            <span class="nav-item-text">FP Layout</span>
+        </a>
+
         <div class="nav-section-label" style="margin-top:8px;">ระบบ</div>
 
         <a class="nav-item" href="#" onclick="showComingSoon('รายงาน'); return false;">

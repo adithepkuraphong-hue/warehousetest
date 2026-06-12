@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบริหารคลังสินค้าอัจฉริยะ (Inventory Dashboard)</title>
+    <title>ระบบบริหารคลังสินค้า (Inventory Dashboard)</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <?php
 $activePage = 'inventory';
-$pageTitle = 'คลังสินค้า';
+$pageTitle = 'WareHouse';
 $showInventoryToolbar = true;
 ?>
 
@@ -65,8 +65,11 @@ $showInventoryToolbar = true;
                     รายการสินค้าในคลัง
                 </div>
             </div>
-            <div class="toolbar-right" id="dispatchAllArea" style="display:none;">
-                <!-- placeholder for future bulk actions -->
+            <div class="toolbar-right" id="dispatchAllArea">
+                <button class="btn btn-warning" id="toggleEditBtn" onclick="toggleEditMode()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Edit
+                </button>
             </div>
         </div>
 
@@ -109,7 +112,12 @@ $showInventoryToolbar = true;
                         </div>
                         <div class="form-group">
                             <label>ชื่อสินค้า *</label>
-                            <input type="text" id="productName" placeholder="ชื่อสินค้า/วัตถุ" required>
+                            <select id="productName" required>
+                                <option value="">-- เลือกสินค้า --</option>
+                                <option value="Paper">Paper</option>
+                                <option value="Wood">Wood</option>
+                                <option value="Plastic">Plastic</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>ปริมาณชิ้น *</label>
@@ -117,10 +125,9 @@ $showInventoryToolbar = true;
                         </div>
                         <div class="form-group">
                             <label>สถานะ *</label>
-                            <select id="status" required>
-                                <option value="">-- เลือกสถานะ --</option>
-                                <option value="Keep">Keep (เก็บในคลัง)</option>
-                                <option value="Empty">Empty (หมด)</option>
+                            <select id="status" disabled>
+                                <option value="In Stock">In Stock</option>
+                                <option value="Out Stock">Out Stock</option>
                             </select>
                         </div>
                     </div>
@@ -274,12 +281,15 @@ $showInventoryToolbar = true;
     let deleteId = null;
     let dispatchItem = null; // current item being dispatched
     let sidebarCollapsed = false;
+    let sortState = { key: 'created_at', direction: 'desc' };
 
     // ─── INIT ───
     document.addEventListener('DOMContentLoaded', () => {
         loadInventory();
         setupLocationIdGenerator();
         setupMobileDetect();
+        document.getElementById('quantity').addEventListener('input', syncStatusFromQuantity);
+        window.LiveUpdates?.on('inventory.changed', () => loadInventory({ silent: true }));
     });
 
     // ─── SIDEBAR ───
@@ -341,7 +351,7 @@ $showInventoryToolbar = true;
                 if (!haystack.includes(q)) return false;
             }
             // status
-            if (statusF && item.status !== statusF) return false;
+            if (statusF && normalizeStatus(item.status, item.quantity) !== statusF) return false;
             if (warehouseF) {
                 const wh = (item.warehouse || (item.location_id || '').charAt(0)).toUpperCase();
                 if (wh !== warehouseF) return false;
@@ -364,7 +374,7 @@ $showInventoryToolbar = true;
             badge.textContent = `พบ ${filteredData.length} / ${inventoryCachedData.length} รายการ`;
         }
 
-        displayTable(filteredData, q);
+        displayTable(sortItems(filteredData), q);
     }
 
     function handleSearch() {
@@ -381,9 +391,11 @@ $showInventoryToolbar = true;
     }
 
     // ─── LOAD DATA ───
-    function loadInventory() {
+    function loadInventory(options = {}) {
         const container = document.getElementById('tableContent');
-        container.innerHTML = `<div class="state-container"><div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div><p>กำลังโหลดข้อมูลจากระบบ...</p></div>`;
+        if (!options.silent) {
+            container.innerHTML = `<div class="state-container"><div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div><p>กำลังโหลดข้อมูลจากระบบ...</p></div>`;
+        }
 
         fetch(API_URL, { method: 'GET' })
             .then(r => r.json())
@@ -418,24 +430,25 @@ $showInventoryToolbar = true;
 
         let html = `<table>
             <thead><tr>
-                <th>ID สินค้า</th>
-                <th>ชื่อสินค้า</th>
-                <th>ปริมาณ</th>
-                <th>สถานะ</th>
-                <th>Location ID</th>
-                <th>วันที่บันทึก</th>
+                ${sortHeader('product_id', 'ID สินค้า')}
+                ${sortHeader('product_name', 'ชื่อสินค้า')}
+                ${sortHeader('quantity', 'ปริมาณ')}
+                ${sortHeader('status', 'สถานะ')}
+                ${sortHeader('location_id', 'Location ID')}
+                ${sortHeader('created_at', 'วันที่บันทึก')}
                 <th>เบิกสินค้า</th>
                 ${isEditMode ? '<th>การกระทำ</th>' : ''}
             </tr></thead><tbody>`;
 
         items.forEach(item => {
-            const badgeClass = item.status === 'Keep' ? 'badge-success' : 'badge-danger';
-            const badgeText = item.status === 'Keep' ? '✓ Keep' : '✕ Empty';
+            const status = normalizeStatus(item.status, item.quantity);
+            const badgeClass = status === 'In Stock' ? 'badge-success' : 'badge-danger';
+            const badgeText = status === 'In Stock' ? 'In Stock' : 'Out Stock';
             const dateFmt = new Date(item.created_at).toLocaleString('th-TH', { hour12: false });
             const locId = item.location_id || 'AA-1-0';
             const itemId = Number(item.id);
             const quantity = Number(item.quantity);
-            const canDispatch = item.status === 'Keep' && quantity > 0;
+            const canDispatch = status === 'In Stock' && quantity > 0;
 
             html += `<tr>
                 <td style="font-weight:700;color:var(--text-1);">${hl(item.product_id)}</td>
@@ -468,8 +481,8 @@ $showInventoryToolbar = true;
     // ─── STATS ───
     function updateStatistics(items) {
         const total = items.length;
-        const keep = items.filter(i => i.status === 'Keep').length;
-        const empty = items.filter(i => i.status === 'Empty').length;
+        const keep = items.filter(i => normalizeStatus(i.status, i.quantity) === 'In Stock').length;
+        const empty = items.filter(i => normalizeStatus(i.status, i.quantity) === 'Out Stock').length;
         document.getElementById('totalItems').textContent = total;
         document.getElementById('keepItems').textContent = keep;
         document.getElementById('emptyItems').textContent = empty;
@@ -479,7 +492,7 @@ $showInventoryToolbar = true;
     function toggleEditMode() {
         isEditMode = !isEditMode;
         document.getElementById('toggleEditBtn').classList.toggle('active', isEditMode);
-        displayTable(filteredData, document.getElementById('searchInput').value.trim().toLowerCase());
+        displayTable(sortItems(filteredData), document.getElementById('searchInput').value.trim().toLowerCase());
     }
 
     // ─── ADD / EDIT MODAL ───
@@ -490,6 +503,7 @@ $showInventoryToolbar = true;
         document.getElementById('modalTitle').textContent = '➕ เพิ่มรายการสินค้าใหม่';
         document.getElementById('submitBtn').textContent = 'บันทึกสินค้า';
         generateLocationId();
+        syncStatusFromQuantity();
         document.getElementById('productModal').classList.add('open');
     }
 
@@ -503,7 +517,6 @@ $showInventoryToolbar = true;
             productId: document.getElementById('productId').value.trim(),
             productName: document.getElementById('productName').value.trim(),
             quantity: parseInt(document.getElementById('quantity').value),
-            status: document.getElementById('status').value,
             warehouseCode: document.getElementById('warehouseCode').value,
             rowLocation: document.getElementById('rowLocation').value,
             columnLocation: parseInt(document.getElementById('columnLocation').value),
@@ -541,12 +554,13 @@ $showInventoryToolbar = true;
                     document.getElementById('productId').readOnly = false;
                     document.getElementById('productName').value = item.product_name;
                     document.getElementById('quantity').value = item.quantity;
-                    document.getElementById('status').value = item.status;
+                    document.getElementById('status').value = normalizeStatus(item.status, item.quantity);
                     document.getElementById('warehouseCode').value = item.warehouse || 'A';
                     document.getElementById('rowLocation').value = item.row_location || 'A';
                     document.getElementById('columnLocation').value = item.column_location || '1';
                     document.getElementById('level').value = item.level || '0';
                     generateLocationId();
+                    syncStatusFromQuantity();
                     document.getElementById('modalTitle').textContent = '✏️ แก้ไขข้อมูลสินค้า';
                     document.getElementById('submitBtn').textContent = 'บันทึกการแก้ไข';
                     document.getElementById('productModal').classList.add('open');
@@ -622,7 +636,7 @@ $showInventoryToolbar = true;
             </div>
             <div class="dispatch-info-item">
                 <div class="di-label">สถานะ</div>
-                <div class="di-value"><span class="badge badge-success">✓ Keep</span></div>
+                <div class="di-value"><span class="badge badge-success">In Stock</span></div>
             </div>
             <div class="dispatch-info-item">
                 <div class="di-label">บันทึกเมื่อ</div>
@@ -678,7 +692,6 @@ $showInventoryToolbar = true;
         if (qtyToDispatch > dispatchItem.quantity) { showToast('จำนวนเบิกเกินกว่าที่มีในคลัง', 'error'); return; }
 
         const newQty = dispatchItem.quantity - qtyToDispatch;
-        const newStatus = newQty === 0 ? 'Empty' : 'Keep';
         const destination = document.getElementById('dispatchDestination').value;
 
         // Build update payload matching the existing PUT structure
@@ -687,7 +700,6 @@ $showInventoryToolbar = true;
             productId: dispatchItem.product_id,
             productName: dispatchItem.product_name,
             quantity: newQty,
-            status: newStatus,
             warehouseCode: dispatchItem.warehouse || (dispatchItem.location_id || 'A').charAt(0),
             rowLocation: dispatchItem.row_location || 'A',
             columnLocation: parseInt(dispatchItem.column_location) || 1,
@@ -751,6 +763,51 @@ $showInventoryToolbar = true;
         document.getElementById('locationId').value = `${wh}${row}-${col}-${lvl}`;
     }
 
+    function syncStatusFromQuantity() {
+        const qty = parseInt(document.getElementById('quantity').value) || 0;
+        document.getElementById('status').value = qty <= 0 ? 'Out Stock' : 'In Stock';
+    }
+
+    function normalizeStatus(status, quantity) {
+        if (Number(quantity) <= 0) return 'Out Stock';
+        if (status === 'Keep') return 'In Stock';
+        if (status === 'Empty') return 'Out Stock';
+        return status === 'Out Stock' ? 'Out Stock' : 'In Stock';
+    }
+
+    function sortHeader(key, label) {
+        const active = sortState.key === key;
+        const arrow = active ? (sortState.direction === 'asc' ? '▲' : '▼') : '↕';
+        return `<th><button class="sort-header ${active ? 'active' : ''}" onclick="setSort('${key}')">${label}<span>${arrow}</span></button></th>`;
+    }
+
+    function setSort(key) {
+        if (sortState.key === key) {
+            sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortState = { key, direction: 'asc' };
+        }
+        displayTable(sortItems(filteredData), document.getElementById('searchInput').value.trim().toLowerCase());
+    }
+
+    function sortItems(items) {
+        const direction = sortState.direction === 'asc' ? 1 : -1;
+        return [...items].sort((a, b) => {
+            let av = sortValue(a, sortState.key);
+            let bv = sortValue(b, sortState.key);
+            if (av < bv) return -1 * direction;
+            if (av > bv) return 1 * direction;
+            return 0;
+        });
+    }
+
+    function sortValue(item, key) {
+        if (key === 'quantity') return Number(item.quantity || 0);
+        if (key === 'created_at') return new Date(item.created_at || 0).getTime();
+        if (key === 'status') return normalizeStatus(item.status, item.quantity);
+        return String(item[key] || '').toLowerCase();
+    }
+
     // ─── TOAST ───
     function showToast(msg, type = 'success') {
         const el = document.getElementById('toastAlert');
@@ -762,7 +819,7 @@ $showInventoryToolbar = true;
 
     // ─── COMING SOON ───
     function showComingSoon(name) {
-        showToast(`${name} — เร็วๆ นี้ 🚧`, 'warning');
+        showToast(`${name} - เร็วๆ นี้`, 'warning');
     }
 
     // ─── CLOSE MODALS ON OVERLAY CLICK ───
@@ -779,5 +836,6 @@ $showInventoryToolbar = true;
     function escAttr(s) { return String(s).replace(/'/g, "\\'"); }
     function escRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 </script>
+<script src="assets/js/live-updates.js"></script>
 </body>
 </html>

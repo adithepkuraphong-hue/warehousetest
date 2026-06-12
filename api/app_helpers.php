@@ -41,4 +41,28 @@ function logOrderHistory($conn, $log_type, $action, $reference_type, $reference_
 
     return $stmt->execute();
 }
+
+function emitLiveUpdate($topic, $payload = array()) {
+    $message = json_encode(array(
+        'topic' => $topic,
+        'payload' => $payload,
+        'sentAt' => gmdate('c')
+    ), JSON_UNESCAPED_UNICODE);
+
+    $fp = @fsockopen('127.0.0.1', 8090, $errno, $errstr, 0.25);
+    if (!$fp) {
+        return false;
+    }
+
+    $request = "POST /broadcast HTTP/1.1\r\n";
+    $request .= "Host: 127.0.0.1:8090\r\n";
+    $request .= "Content-Type: application/json; charset=utf-8\r\n";
+    $request .= "Content-Length: " . strlen($message) . "\r\n";
+    $request .= "Connection: Close\r\n\r\n";
+    $request .= $message;
+
+    fwrite($fp, $request);
+    fclose($fp);
+    return true;
+}
 ?>

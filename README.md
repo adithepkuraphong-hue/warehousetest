@@ -37,6 +37,19 @@ testapi/
 ### 3. เข้าถึงเว็บแอปพลิเคชัน
 - URL: `http://localhost/testapi/front/`
 
+### 4. อัปเดตฐานข้อมูลสำหรับเวอร์ชัน Live Update
+- รันไฟล์ migration: `migrations/2026_06_12_live_inventory_updates.sql`
+- Migration นี้เปลี่ยนสถานะสินค้าเป็น `In Stock` / `Out Stock` และล็อกชื่อสินค้าให้อยู่ใน Master Data: `Paper`, `Wood`, `Plastic`
+- รันไฟล์ migration เพิ่มเติมสำหรับพิกัดคลัง FP: `migrations/2026_06_12_fdwarehouse_location.sql`
+- หน้า Layout สำหรับคลังสินค้าสำเร็จรูปอยู่ที่ `http://localhost/testapi/front/fp_warehouse_layout.php`
+
+### 5. เปิด WebSocket Server
+ระบบ Live Update ใช้ Node.js แบบไม่ต้องติดตั้ง dependency เพิ่ม:
+```bash
+npm run ws
+```
+ค่าเริ่มต้นจะเปิดที่ `ws://127.0.0.1:8090/ws`
+
 ## 📊 ฟีเจอร์
 
 ### ฐานข้อมูล (Database)

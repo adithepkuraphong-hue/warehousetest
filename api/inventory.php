@@ -99,6 +99,22 @@ function generateLocationId($warehouse, $zone, $row, $level) {
     return strtoupper($warehouse) . strtoupper($zone) . '-' . $row . '-' . $level;
 }
 
+function normalizeInventoryStatus($quantity, $status = null) {
+    if (intval($quantity) <= 0) {
+        return 'Out Stock';
+    }
+
+    if ($status === 'Empty' || $status === 'Out Stock') {
+        return 'Out Stock';
+    }
+
+    return 'In Stock';
+}
+
+function isAllowedProductName($product_name) {
+    return in_array($product_name, array('Paper', 'Wood', 'Plastic'), true);
+}
+
 function validateLocation($warehouse, $zone, $row, $level) {
     if (!preg_match('/^[A-B]$/', $warehouse)) {
         http_response_code(400);
@@ -124,7 +140,14 @@ function validateLocation($warehouse, $zone, $row, $level) {
 function getAll() {
     global $conn;
     
-    $sql = "SELECT id, product_id, product_name, quantity, status, warehouse, row_location, column_location, level, location_id, created_at, updated_at FROM inventory ORDER BY created_at DESC";
+    $sql = "SELECT id, product_id, product_name, quantity,
+            CASE
+                WHEN quantity <= 0 THEN 'Out Stock'
+                WHEN status IN ('Empty', 'Out Stock') THEN 'Out Stock'
+                ELSE 'In Stock'
+            END AS status,
+            warehouse, row_location, column_location, level, location_id, created_at, updated_at
+            FROM inventory ORDER BY created_at DESC";
     $result = $conn->query($sql);
     
     if ($result->num_rows > 0) {
@@ -150,7 +173,14 @@ function getById() {
         return array('status' => 'error', 'message' => 'ID is required');
     }
     
-    $sql = "SELECT id, product_id, product_name, quantity, status, warehouse, row_location, column_location, level, location_id, created_at, updated_at FROM inventory WHERE id = ?";
+    $sql = "SELECT id, product_id, product_name, quantity,
+            CASE
+                WHEN quantity <= 0 THEN 'Out Stock'
+                WHEN status IN ('Empty', 'Out Stock') THEN 'Out Stock'
+                ELSE 'In Stock'
+            END AS status,
+            warehouse, row_location, column_location, level, location_id, created_at, updated_at
+            FROM inventory WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -173,18 +203,23 @@ function create() {
     
     // Validate required fields
     if (!$input || empty($input['product_id']) || empty($input['product_name']) || 
-        !isset($input['quantity']) || empty($input['status'])) {
+        !isset($input['quantity'])) {
         http_response_code(400);
         return array(
             'status' => 'error', 
-            'message' => 'Missing required fields: product_id, product_name, quantity, status'
+            'message' => 'Missing required fields: product_id, product_name, quantity'
         );
     }
     
     $product_id = $input['product_id'];
     $product_name = $input['product_name'];
     $quantity = intval($input['quantity']);
-    $status = $input['status'];
+    $status = normalizeInventoryStatus($quantity, isset($input['status']) ? $input['status'] : null);
+
+    if (!isAllowedProductName($product_name)) {
+        http_response_code(400);
+        return array('status' => 'error', 'message' => 'Product Name must be Paper, Wood, or Plastic');
+    }
     
     // Location fields (optional)
     $warehouse = isset($input['warehouse']) ? strtoupper($input['warehouse']) : 'A';
@@ -192,12 +227,6 @@ function create() {
     $row = isset($input['column_location']) ? intval($input['column_location']) : 1;
     $level = isset($input['level']) ? intval($input['level']) : 0;
     $location_id = generateLocationId($warehouse, $zone, $row, $level);
-    
-    // Validate status
-    if ($status != 'Keep' && $status != 'Empty') {
-        http_response_code(400);
-        return array('status' => 'error', 'message' => 'Status must be "Keep" or "Empty"');
-    }
     
     $location_error = validateLocation($warehouse, $zone, $row, $level);
     if ($location_error) {
@@ -211,6 +240,8 @@ function create() {
     if ($stmt->execute()) {
         http_response_code(201);
         logOrderHistory($conn, 'Inbound', 'Create Inventory Item', 'Inventory', strval($conn->insert_id), $product_id, $product_name, $quantity, 'Manual Input', $location_id, $status, '');
+        emitLiveUpdate('inventory.changed', array('action' => 'create', 'id' => $conn->insert_id));
+        emitLiveUpdate('history.changed', array('action' => 'create'));
         return array('status' => 'success', 'message' => 'Item created successfully', 'id' => $conn->insert_id);
     } else {
         if (strpos($stmt->error, 'Duplicate entry') !== false) {
@@ -270,6 +301,10 @@ function update() {
         $types .= 's';
     }
     if ($product_name !== null) {
+        if (!isAllowedProductName($product_name)) {
+            http_response_code(400);
+            return array('status' => 'error', 'message' => 'Product Name must be Paper, Wood, or Plastic');
+        }
         $updates[] = "product_name = ?";
         $params[] = $product_name;
         $types .= 's';
@@ -279,11 +314,18 @@ function update() {
         $params[] = $quantity;
         $types .= 'i';
     }
-    if ($status !== null) {
-        if ($status != 'Keep' && $status != 'Empty') {
-            http_response_code(400);
-            return array('status' => 'error', 'message' => 'Status must be "Keep" or "Empty"');
+    if ($quantity !== null || $status !== null) {
+        if ($quantity === null) {
+            $sql_qty = "SELECT quantity FROM inventory WHERE id = ?";
+            $stmt_qty = $conn->prepare($sql_qty);
+            $stmt_qty->bind_param("i", $id);
+            $stmt_qty->execute();
+            $current_qty = $stmt_qty->get_result()->fetch_assoc();
+            $quantity_for_status = $current_qty ? intval($current_qty['quantity']) : 0;
+        } else {
+            $quantity_for_status = $quantity;
         }
+        $status = normalizeInventoryStatus($quantity_for_status, $status);
         $updates[] = "status = ?";
         $params[] = $status;
         $types .= 's';
@@ -353,6 +395,8 @@ function update() {
             $log_source = isset($input['logSource']) ? $input['logSource'] : 'Inventory';
             $log_destination = isset($input['logDestination']) ? $input['logDestination'] : ($location_id ?? '');
             logOrderHistory($conn, $log_type, $log_action, 'Inventory', strval($id), $product_id ?? '', $product_name ?? '', $quantity ?? 0, $log_source, $log_destination, $status ?? 'Updated', '');
+            emitLiveUpdate('inventory.changed', array('action' => 'update', 'id' => $id));
+            emitLiveUpdate('history.changed', array('action' => 'update'));
             return array('status' => 'success', 'message' => 'Item updated successfully');
         } else {
             http_response_code(404);
@@ -396,6 +440,8 @@ function delete() {
             if ($item) {
                 logOrderHistory($conn, 'Outbound', 'Delete Inventory Item', 'Inventory', strval($id), $item['product_id'], $item['product_name'], $item['quantity'], $item['location_id'], 'Removed', 'Deleted', '');
             }
+            emitLiveUpdate('inventory.changed', array('action' => 'delete', 'id' => $id));
+            emitLiveUpdate('history.changed', array('action' => 'delete'));
             return array('status' => 'success', 'message' => 'Item deleted successfully');
         } else {
             http_response_code(404);

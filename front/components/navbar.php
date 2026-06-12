@@ -41,13 +41,9 @@
     </button>
 
     <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
-        <button class="btn btn-primary" onclick="openAddModal()">
+        <button class="btn btn-primary btn-new-order" onclick="openAddModal()">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
             New Order
-        </button>
-        <button class="btn btn-warning" id="toggleEditBtn" onclick="toggleEditMode()">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-            Edit
         </button>
     </div>
     <?php endif; ?>
@@ -63,8 +59,8 @@
 
     <select class="filter-select" id="filterStatus" onchange="applyFilters()">
         <option value="">สถานะ: ทั้งหมด</option>
-        <option value="Keep">Keep (เก็บไว้)</option>
-        <option value="Empty">Empty (หมด)</option>
+        <option value="In Stock">In Stock</option>
+        <option value="Out Stock">Out Stock</option>
     </select>
 
     <select class="filter-select" id="filterWarehouse" onchange="applyFilters()">
