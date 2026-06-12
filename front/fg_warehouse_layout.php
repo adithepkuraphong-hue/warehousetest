@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FP Warehouse Layout Overview</title>
+    <title>FG Warehouse Layout Overview</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <?php
-$activePage = 'fp_layout';
-$pageTitle = 'FP Warehouse Layout';
+$activePage = 'fg_layout';
+$pageTitle = 'FG Warehouse Layout';
 $showInventoryToolbar = false;
 ?>
 
@@ -23,7 +23,7 @@ $showInventoryToolbar = false;
     <main class="page-content layout-page">
         <section class="layout-summary">
             <div>
-                <p class="layout-kicker">Final Product Overview</p>
+                <p class="layout-kicker">Finish Goods Overview</p>
                 <h1>ภาพรวมตำแหน่งสินค้าสำเร็จรูป</h1>
             </div>
             <div class="layout-actions">
@@ -37,9 +37,9 @@ $showInventoryToolbar = false;
             </div>
         </section>
 
-        <section class="layout-metrics" aria-label="FP warehouse summary">
+        <section class="layout-metrics" aria-label="FG warehouse summary">
             <div class="layout-metric">
-                <span>FP Lots ทั้งหมด</span>
+                <span>FG Lots ทั้งหมด</span>
                 <strong id="layoutTotalItems">0</strong>
             </div>
             <div class="layout-metric">
@@ -51,15 +51,15 @@ $showInventoryToolbar = false;
                 <strong id="layoutTotalQty">0</strong>
             </div>
             <div class="layout-legend">
-                <span><i class="legend-dot legend-a"></i>FP Warehouse A</span>
-                <span><i class="legend-dot legend-b"></i>FP Warehouse B</span>
+                <span><i class="legend-dot legend-a"></i>FG Warehouse A</span>
+                <span><i class="legend-dot legend-b"></i>FG Warehouse B</span>
             </div>
         </section>
 
         <section class="warehouse-overview" id="warehouseOverview">
             <div class="state-container">
                 <div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div>
-                <p>กำลังโหลดแผนผังคลัง FP...</p>
+                <p>กำลังโหลดแผนผังคลัง FG...</p>
             </div>
         </section>
     </main>
@@ -80,7 +80,7 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/fp_warehouse_layout.php';
+    const API_URL = '/testapi/api/fg_warehouse_layout.php';
     const warehouses = ['A', 'B'];
     const zones = ['A', 'B', 'C'];
     const rows = [1, 2, 3, 4, 5];
@@ -91,12 +91,12 @@ $showInventoryToolbar = false;
     document.addEventListener('DOMContentLoaded', () => {
         loadLayoutData();
         setupMobileDetect();
-        window.LiveUpdates?.on('fp.changed', () => loadLayoutData());
+        window.LiveUpdates?.on('fg.changed', () => loadLayoutData());
     });
 
     function loadLayoutData() {
         const overview = document.getElementById('warehouseOverview');
-        overview.innerHTML = `<div class="state-container"><div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div><p>กำลังโหลดแผนผังคลัง FP...</p></div>`;
+        overview.innerHTML = `<div class="state-container"><div style="margin-bottom:12px"><div class="loading-dots"><span></span><span></span><span></span></div></div><p>กำลังโหลดแผนผังคลัง FG...</p></div>`;
 
         fetch(API_URL, { method: 'GET' })
             .then(r => r.json())
@@ -119,7 +119,7 @@ $showInventoryToolbar = false;
                 <article class="warehouse-block warehouse-${warehouse.toLowerCase()}">
                     <div class="warehouse-block-header">
                         <div>
-                            <span>FP Warehouse</span>
+                            <span>FG Warehouse</span>
                             <strong>${warehouse}</strong>
                         </div>
                         <small>${totalQty.toLocaleString()} ชิ้น</small>
@@ -156,7 +156,7 @@ $showInventoryToolbar = false;
     }
 
     function openLocationModal(warehouse, zone, row) {
-        document.getElementById('layoutModalTitle').textContent = `FP Warehouse-${warehouse} Zone-${zone} Row-${row} LID: ${warehouse}${zone}-${row}-XX`;
+        document.getElementById('layoutModalTitle').textContent = `FG Warehouse-${warehouse} Zone-${zone} Row-${row} LID: ${warehouse}${zone}-${row}-XX`;
         document.getElementById('levelList').innerHTML = levels.map(level => renderLevelCard(warehouse, zone, row, level)).join('');
         document.getElementById('layoutModal').classList.add('open');
     }
@@ -203,6 +203,7 @@ $showInventoryToolbar = false;
         return layoutItems.filter(item => String(item.warehouse || '').toUpperCase() === warehouse);
     }
 
+    // Fixed naming layout function to filter items
     function getLocationItems(warehouse, zone, row) {
         return layoutItems.filter(item =>
             String(item.warehouse || '').toUpperCase() === warehouse &&

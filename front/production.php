@@ -80,28 +80,28 @@ $showInventoryToolbar = false;
             <div class="dispatch-info-grid" id="completeInfo"></div>
             <div class="form-group" style="margin-bottom:0;">
                 <label>ส่งชิ้นงานต่อไปที่</label>
-                <select id="completeDestination" onchange="toggleFpLocationFields()">
-                    <option value="FP Warehouse">FP Warehouse</option>
+                <select id="completeDestination" onchange="toggleFgLocationFields()">
+                    <option value="FG Warehouse">FG Warehouse</option>
                     <option value="Printer">Printer</option>
                     <option value="Cutter">Cutter</option>
                 </select>
             </div>
-            <div class="fp-location-panel" id="fpLocationPanel">
+            <div class="fg-location-panel" id="fgLocationPanel">
                 <div class="form-section-title" style="margin-top:18px;">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
-                    ตำแหน่งจัดเก็บ FP Warehouse
+                    ตำแหน่งจัดเก็บ FG Warehouse
                 </div>
                 <div class="form-grid form-grid-compact">
                     <div class="form-group">
                         <label>อาคารคลังสินค้า</label>
-                        <select id="fpWarehouseCode" onchange="generateFpLocationId()">
+                        <select id="fgWarehouseCode" onchange="generateFgLocationId()">
                             <option value="A">คลังสินค้า A</option>
                             <option value="B">คลังสินค้า B</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>โซน (Zone)</label>
-                        <select id="fpRowLocation" onchange="generateFpLocationId()">
+                        <select id="fgRowLocation" onchange="generateFgLocationId()">
                             <option value="A">โซน A</option>
                             <option value="B">โซน B</option>
                             <option value="C">โซน C</option>
@@ -109,7 +109,7 @@ $showInventoryToolbar = false;
                     </div>
                     <div class="form-group">
                         <label>แถว (Row)</label>
-                        <select id="fpColumnLocation" onchange="generateFpLocationId()">
+                        <select id="fgColumnLocation" onchange="generateFgLocationId()">
                             <option value="1">แถว 1</option>
                             <option value="2">แถว 2</option>
                             <option value="3">แถว 3</option>
@@ -119,16 +119,16 @@ $showInventoryToolbar = false;
                     </div>
                     <div class="form-group">
                         <label>ชั้นความสูง (Level)</label>
-                        <select id="fpLevel" onchange="generateFpLocationId()">
+                        <select id="fgLevel" onchange="generateFgLocationId()">
                             <option value="0">ชั้น 0 (พื้นดิน)</option>
                             <option value="1">ชั้น 1</option>
                             <option value="2">ชั้น 2</option>
                             <option value="3">ชั้น 3</option>
                         </select>
                     </div>
-                    <div class="form-group fp-location-id-field">
+                    <div class="form-group fg-location-id-field">
                         <label>รหัสพิกัด (Location ID)</label>
-                        <input type="text" id="fpLocationId" readonly>
+                        <input type="text" id="fgLocationId" readonly>
                     </div>
                 </div>
             </div>
@@ -151,6 +151,13 @@ $showInventoryToolbar = false;
     let selectedMachine = '';
 
     document.addEventListener('DOMContentLoaded', () => {
+        const storedMachine = localStorage.getItem('selectedMachine');
+        if (storedMachine && ['Printer', 'Cutter'].includes(storedMachine)) {
+            selectedMachine = storedMachine;
+            document.getElementById('machineSelector').value = selectedMachine;
+            const hint = document.getElementById('machineHint');
+            hint.textContent = `${selectedMachine} พร้อมแสดงงานรอผลิตและงานที่กำลังทำอยู่`;
+        }
         loadProduction();
         setupMobileDetect();
         window.LiveUpdates?.on('production.changed', () => loadProduction({ silent: true }));
@@ -204,6 +211,7 @@ $showInventoryToolbar = false;
 
     function selectMachine(machine) {
         selectedMachine = machine;
+        localStorage.setItem('selectedMachine', machine);
         const hint = document.getElementById('machineHint');
         hint.textContent = machine
             ? `${machine} พร้อมแสดงงานรอผลิตและงานที่กำลังทำอยู่`
@@ -266,14 +274,14 @@ $showInventoryToolbar = false;
         document.getElementById('completeTitle').textContent = `Complete ${completingOrder.pr_no}`;
         const nextMachine = completingOrder.machine_type === 'Printer' ? 'Cutter' : 'Printer';
         document.getElementById('completeDestination').innerHTML = `
-            <option value="FP Warehouse">FP Warehouse</option>
+            <option value="FG Warehouse">FG Warehouse</option>
             <option value="${nextMachine}">${nextMachine}</option>
         `;
-        document.getElementById('completeDestination').value = 'FP Warehouse';
-        toggleFpLocationFields();
-        generateFpLocationId();
+        document.getElementById('completeDestination').value = 'FG Warehouse';
+        toggleFgLocationFields();
+        generateFgLocationId();
         document.getElementById('completeInfo').innerHTML = `
-            <div class="dispatch-info-item"><div class="di-label">สินค้า</div><div class="di-value">${escHtml(completingOrder.final_product_name)}</div></div>
+            <div class="dispatch-info-item"><div class="di-label">สินค้า</div><div class="di-value">${escHtml(completingOrder.fg_product_name)}</div></div>
             <div class="dispatch-info-item"><div class="di-label">จำนวน</div><div class="di-value">${Number(completingOrder.quantity).toLocaleString()} ชิ้น</div></div>
             <div class="dispatch-info-item"><div class="di-label">เครื่องจักร</div><div class="di-value">${escHtml(completingOrder.machine_type)}</div></div>
         `;
@@ -294,11 +302,11 @@ $showInventoryToolbar = false;
             destination
         };
 
-        if (destination === 'FP Warehouse') {
-            payload.fpWarehouseCode = document.getElementById('fpWarehouseCode').value;
-            payload.fpRowLocation = document.getElementById('fpRowLocation').value;
-            payload.fpColumnLocation = Number(document.getElementById('fpColumnLocation').value);
-            payload.fpLevel = Number(document.getElementById('fpLevel').value);
+        if (destination === 'FG Warehouse') {
+            payload.fgWarehouseCode = document.getElementById('fgWarehouseCode').value;
+            payload.fgRowLocation = document.getElementById('fgRowLocation').value;
+            payload.fgColumnLocation = Number(document.getElementById('fgColumnLocation').value);
+            payload.fgLevel = Number(document.getElementById('fgLevel').value);
         }
 
         fetch(API_URL, {
@@ -315,17 +323,17 @@ $showInventoryToolbar = false;
         .catch(err => showToast(err.message, 'error'));
     }
 
-    function toggleFpLocationFields() {
-        const show = document.getElementById('completeDestination').value === 'FP Warehouse';
-        document.getElementById('fpLocationPanel').style.display = show ? 'block' : 'none';
+    function toggleFgLocationFields() {
+        const show = document.getElementById('completeDestination').value === 'FG Warehouse';
+        document.getElementById('fgLocationPanel').style.display = show ? 'block' : 'none';
     }
 
-    function generateFpLocationId() {
-        const wh = document.getElementById('fpWarehouseCode').value;
-        const zone = document.getElementById('fpRowLocation').value;
-        const row = document.getElementById('fpColumnLocation').value;
-        const level = document.getElementById('fpLevel').value;
-        document.getElementById('fpLocationId').value = `${wh}${zone}-${row}-${level}`;
+    function generateFgLocationId() {
+        const wh = document.getElementById('fgWarehouseCode').value;
+        const zone = document.getElementById('fgRowLocation').value;
+        const row = document.getElementById('fgColumnLocation').value;
+        const level = document.getElementById('fgLevel').value;
+        document.getElementById('fgLocationId').value = `${wh}${zone}-${row}-${level}`;
     }
 
     function toggleSidebar() {

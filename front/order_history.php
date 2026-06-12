@@ -51,15 +51,15 @@ $showInventoryToolbar = false;
             </div>
         </section>
 
-        <section class="ops-grid history-grid">
-            <div class="main-card">
+        <section class="ops-grid history-grid" id="historyGrid">
+            <div class="main-card" id="inboundCard">
                 <div class="ops-card-head">
                     <div class="card-section-title">Inbound Log</div>
                     <button class="btn-row btn-row-edit" onclick="loadHistory('Inbound')">Refresh</button>
                 </div>
                 <div class="log-list" id="inboundLog"></div>
             </div>
-            <div class="main-card">
+            <div class="main-card" id="outboundCard">
                 <div class="ops-card-head">
                     <div class="card-section-title">Outbound / Dispatch Log</div>
                     <button class="btn-row btn-row-edit" onclick="loadHistory('Outbound')">Refresh</button>
@@ -97,15 +97,26 @@ $showInventoryToolbar = false;
 
     function loadAllHistory() {
         const selectedType = document.getElementById('filterLogType').value;
-        if (!selectedType || selectedType === 'Inbound') {
+        const grid = document.getElementById('historyGrid');
+        const inboundCard = document.getElementById('inboundCard');
+        const outboundCard = document.getElementById('outboundCard');
+
+        if (!selectedType) {
+            inboundCard.style.display = 'block';
+            outboundCard.style.display = 'block';
+            grid.classList.remove('full-width-single-view');
             loadHistory('Inbound');
-        } else {
-            renderLog('Inbound', []);
-        }
-        if (!selectedType || selectedType === 'Outbound') {
             loadHistory('Outbound');
-        } else {
-            renderLog('Outbound', []);
+        } else if (selectedType === 'Inbound') {
+            inboundCard.style.display = 'block';
+            outboundCard.style.display = 'none';
+            grid.classList.add('full-width-single-view');
+            loadHistory('Inbound');
+        } else if (selectedType === 'Outbound') {
+            inboundCard.style.display = 'none';
+            outboundCard.style.display = 'block';
+            grid.classList.add('full-width-single-view');
+            loadHistory('Outbound');
         }
     }
 

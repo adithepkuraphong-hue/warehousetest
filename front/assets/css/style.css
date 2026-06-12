@@ -877,7 +877,7 @@ table tbody tr:hover {
     gap: 12px;
 }
 
-.fp-location-panel {
+.fg-location-panel {
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -885,7 +885,7 @@ table tbody tr:hover {
     padding: 14px;
 }
 
-.fp-location-id-field {
+.fg-location-id-field {
     grid-column: 1 / -1;
 }
 
@@ -1217,6 +1217,10 @@ table tbody tr:hover {
 
 .history-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.history-grid.full-width-single-view {
+    grid-template-columns: 1fr;
 }
 
 .ops-card-head {

@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS production_orders (
     source_inventory_id INT NULL,
     source_product_id VARCHAR(50) NOT NULL,
     source_product_name VARCHAR(255) NOT NULL,
-    final_product_id VARCHAR(80) DEFAULT NULL,
-    final_product_name VARCHAR(255) DEFAULT NULL,
+    fg_product_id VARCHAR(80) DEFAULT NULL,
+    fg_product_name VARCHAR(255) DEFAULT NULL,
     quantity INT NOT NULL DEFAULT 0,
     machine_type ENUM('Printer', 'Cutter') NOT NULL,
     status ENUM('รอผลิต', 'กำลังผลิต', 'เสร็จสิ้น') NOT NULL DEFAULT 'รอผลิต',
-    next_destination ENUM('FP Warehouse', 'Printer', 'Cutter') DEFAULT NULL,
+    next_destination ENUM('FG Warehouse', 'Printer', 'Cutter') DEFAULT NULL,
     parent_pr_id INT DEFAULT NULL,
     claimed_at TIMESTAMP NULL DEFAULT NULL,
     completed_at TIMESTAMP NULL DEFAULT NULL,
@@ -43,11 +43,11 @@ CREATE TABLE IF NOT EXISTS production_orders (
     INDEX idx_source_product (source_product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS FDwarehouse (
+CREATE TABLE IF NOT EXISTS FGwarehouse (
     id INT AUTO_INCREMENT PRIMARY KEY,
     pr_no VARCHAR(30) NOT NULL,
-    fp_product_id VARCHAR(80) NOT NULL,
-    fp_product_name VARCHAR(255) NOT NULL,
+    fg_product_id VARCHAR(80) NOT NULL,
+    fg_product_name VARCHAR(255) NOT NULL,
     quantity INT NOT NULL DEFAULT 0,
     source_machine VARCHAR(20) NOT NULL,
     warehouse VARCHAR(1) DEFAULT 'A',
@@ -57,9 +57,9 @@ CREATE TABLE IF NOT EXISTS FDwarehouse (
     location_id VARCHAR(20),
     received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_fp_product_id (fp_product_id),
+    INDEX idx_fg_product_id (fg_product_id),
     INDEX idx_pr_no (pr_no),
-    INDEX idx_fd_location_id (location_id)
+    INDEX idx_fg_location_id (location_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS OrderHis (

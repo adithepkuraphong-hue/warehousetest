@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FP Warehouse</title>
+    <title>FG Warehouse</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <?php
-$activePage = 'fp';
-$pageTitle = 'FP Warehouse';
+$activePage = 'fg';
+$pageTitle = 'FG Warehouse';
 $showInventoryToolbar = false;
 ?>
 
@@ -22,10 +22,10 @@ $showInventoryToolbar = false;
     <main class="page-content">
         <section class="ops-header">
             <div>
-                <p class="layout-kicker">Final Product</p>
+                <p class="layout-kicker">Finish Goods</p>
                 <h1>คลังสินค้าสำเร็จรูป</h1>
             </div>
-            <button class="btn btn-ghost" onclick="loadFPWarehouse()">
+            <button class="btn btn-ghost" onclick="loadFGWarehouse()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/><path d="M23 4v6h-6"/></svg>
                 Refresh
             </button>
@@ -34,15 +34,15 @@ $showInventoryToolbar = false;
         <section class="stats-row">
             <div class="stat-card stat-all">
                 <div class="stat-icon"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/></svg></div>
-                <div><div class="stat-label">FP Lots</div><div class="stat-value" id="fpLots">0</div></div>
+                <div><div class="stat-label">FG Lots</div><div class="stat-value" id="fgLots">0</div></div>
             </div>
             <div class="stat-card stat-keep">
                 <div class="stat-icon"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19h16M4 15h16M4 11h16M4 7h16"/></svg></div>
-                <div><div class="stat-label">FP SKUs</div><div class="stat-value" id="fpSku">0</div></div>
+                <div><div class="stat-label">FG SKUs</div><div class="stat-value" id="fgSku">0</div></div>
             </div>
             <div class="stat-card stat-empty">
                 <div class="stat-icon"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v18M5 10l7-7 7 7"/></svg></div>
-                <div><div class="stat-label">Total Qty</div><div class="stat-value" id="fpQty">0</div></div>
+                <div><div class="stat-label">Total Qty</div><div class="stat-value" id="fgQty">0</div></div>
             </div>
         </section>
 
@@ -51,13 +51,13 @@ $showInventoryToolbar = false;
                 <div class="ops-card-head">
                     <div class="card-section-title">สรุปสินค้าสำเร็จรูป</div>
                 </div>
-                <div class="table-responsive" id="fpSummaryTable"></div>
+                <div class="table-responsive" id="fgSummaryTable"></div>
             </div>
             <div class="main-card">
                 <div class="ops-card-head">
                     <div class="card-section-title">รายการรับเข้าล่าสุด</div>
                 </div>
-                <div class="table-responsive" id="fpLotTable"></div>
+                <div class="table-responsive" id="fgLotTable"></div>
             </div>
         </section>
     </main>
@@ -66,48 +66,48 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/fp_warehouse.php';
+    const API_URL = '/testapi/api/fg_warehouse.php';
     let sidebarCollapsed = false;
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadFPWarehouse();
+        loadFGWarehouse();
         setupMobileDetect();
-        window.LiveUpdates?.on('fp.changed', () => loadFPWarehouse());
-        setInterval(loadFPWarehouse, 30000);
+        window.LiveUpdates?.on('fg.changed', () => loadFGWarehouse());
+        setInterval(loadFGWarehouse, 30000);
     });
 
-    function loadFPWarehouse() {
+    function loadFGWarehouse() {
         fetch(API_URL)
             .then(r => r.json())
             .then(res => {
                 if (res.status !== 'success') throw new Error(res.message || 'Load failed');
-                renderFP(res.data, res.summary);
+                renderFG(res.data, res.summary);
             })
             .catch(err => showToast(err.message, 'error'));
     }
 
-    function renderFP(lots, summary) {
+    function renderFG(lots, summary) {
         const totalQty = lots.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-        document.getElementById('fpLots').textContent = lots.length.toLocaleString();
-        document.getElementById('fpSku').textContent = summary.length.toLocaleString();
-        document.getElementById('fpQty').textContent = totalQty.toLocaleString();
+        document.getElementById('fgLots').textContent = lots.length.toLocaleString();
+        document.getElementById('fgSku').textContent = summary.length.toLocaleString();
+        document.getElementById('fgQty').textContent = totalQty.toLocaleString();
 
-        document.getElementById('fpSummaryTable').innerHTML = summary.length ? `
-            <table><thead><tr><th>FP ID</th><th>ชื่อสินค้า</th><th>Lots</th><th>จำนวนรวม</th></tr></thead><tbody>
+        document.getElementById('fgSummaryTable').innerHTML = summary.length ? `
+            <table><thead><tr><th>FG ID</th><th>ชื่อสินค้า</th><th>Lots</th><th>จำนวนรวม</th></tr></thead><tbody>
             ${summary.map(item => `<tr>
-                <td><span class="location-tag">${escHtml(item.fp_product_id)}</span></td>
-                <td>${escHtml(item.fp_product_name)}</td>
+                <td><span class="location-tag">${escHtml(item.fg_product_id)}</span></td>
+                <td>${escHtml(item.fg_product_name)}</td>
                 <td>${Number(item.lots).toLocaleString()}</td>
                 <td style="font-weight:800;color:var(--success);">${Number(item.total_quantity).toLocaleString()}</td>
             </tr>`).join('')}
             </tbody></table>
         ` : emptyState('ยังไม่มีสินค้าสำเร็จรูป');
 
-        document.getElementById('fpLotTable').innerHTML = lots.length ? `
-            <table><thead><tr><th>PR</th><th>FP</th><th>จำนวน</th><th>Location</th><th>เครื่องต้นทาง</th><th>รับเข้า</th></tr></thead><tbody>
+        document.getElementById('fgLotTable').innerHTML = lots.length ? `
+            <table><thead><tr><th>PR</th><th>FG</th><th>จำนวน</th><th>Location</th><th>เครื่องต้นทาง</th><th>รับเข้า</th></tr></thead><tbody>
             ${lots.map(item => `<tr>
                 <td style="font-weight:700;">${escHtml(item.pr_no)}</td>
-                <td>${escHtml(item.fp_product_name)}<br><span class="text-muted">${escHtml(item.fp_product_id)}</span></td>
+                <td>${escHtml(item.fg_product_name)}<br><span class="text-muted">${escHtml(item.fg_product_id)}</span></td>
                 <td style="font-weight:800;">${Number(item.quantity).toLocaleString()}</td>
                 <td><span class="location-tag">${escHtml(item.location_id || '-')}</span></td>
                 <td><span class="badge badge-success">${escHtml(item.source_machine)}</span></td>

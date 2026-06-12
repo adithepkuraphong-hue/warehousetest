@@ -16,13 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     jsonResponse(array('status' => 'error', 'message' => 'Method not allowed'), 405);
 }
 
-$sql = "SELECT fp.id, fp.pr_no, fp.fp_product_id, fp.fp_product_name, fp.quantity, fp.source_machine,
+$sql = "SELECT fp.id, fp.pr_no, fp.fg_product_id, fp.fg_product_name, fp.quantity, fp.source_machine,
                fp.warehouse, fp.row_location, fp.column_location, fp.level, fp.location_id,
                fp.received_at, fp.created_at
-        FROM FDwarehouse fp
+        FROM FGwarehouse fp
         INNER JOIN production_orders po ON po.pr_no = fp.pr_no
         WHERE po.status = 'เสร็จสิ้น'
-          AND po.next_destination = 'FP Warehouse'
+          AND po.next_destination = 'FG Warehouse'
         ORDER BY fp.received_at DESC, fp.id DESC";
 $result = $conn->query($sql);
 
@@ -31,12 +31,12 @@ while ($row = $result->fetch_assoc()) {
     $rows[] = $row;
 }
 
-$summary_sql = "SELECT fp.fp_product_id, fp.fp_product_name, SUM(fp.quantity) AS total_quantity, COUNT(*) AS lots
-                FROM FDwarehouse fp
+$summary_sql = "SELECT fp.fg_product_id, fp.fg_product_name, SUM(fp.quantity) AS total_quantity, COUNT(*) AS lots
+                FROM FGwarehouse fp
                 INNER JOIN production_orders po ON po.pr_no = fp.pr_no
                 WHERE po.status = 'เสร็จสิ้น'
-                  AND po.next_destination = 'FP Warehouse'
-                GROUP BY fp.fp_product_id, fp.fp_product_name
+                  AND po.next_destination = 'FG Warehouse'
+                GROUP BY fp.fg_product_id, fp.fg_product_name
                 ORDER BY total_quantity DESC";
 $summary_result = $conn->query($summary_sql);
 $summary = array();

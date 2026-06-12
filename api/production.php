@@ -95,14 +95,14 @@ function createProductionOrder($conn, $input) {
     $source_inventory_id = isset($input['sourceInventoryId']) ? intval($input['sourceInventoryId']) : null;
     $source_product_id = $input['sourceProductId'];
     $source_product_name = $input['sourceProductName'];
-    $final_product_id = isset($input['finalProductId']) && $input['finalProductId'] !== '' ? $input['finalProductId'] : 'FP-' . $source_product_id;
-    $final_product_name = isset($input['finalProductName']) && $input['finalProductName'] !== '' ? $input['finalProductName'] : 'FP ' . $source_product_name;
+    $fg_product_id = isset($input['fgProductId']) && $input['fgProductId'] !== '' ? $input['fgProductId'] : 'FG-' . $source_product_id;
+    $fg_product_name = isset($input['fgProductName']) && $input['fgProductName'] !== '' ? $input['fgProductName'] : 'Finish Goods ' . $source_product_name;
     $parent_pr_id = isset($input['parentPrId']) ? intval($input['parentPrId']) : null;
 
-    $sql = "INSERT INTO production_orders (pr_no, source_inventory_id, source_product_id, source_product_name, final_product_id, final_product_name, quantity, machine_type, parent_pr_id)
+    $sql = "INSERT INTO production_orders (pr_no, source_inventory_id, source_product_id, source_product_name, fg_product_id, fg_product_name, quantity, machine_type, parent_pr_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sissssisi", $pr_no, $source_inventory_id, $source_product_id, $source_product_name, $final_product_id, $final_product_name, $quantity, $machine, $parent_pr_id);
+    $stmt->bind_param("sissssisi", $pr_no, $source_inventory_id, $source_product_id, $source_product_name, $fg_product_id, $fg_product_name, $quantity, $machine, $parent_pr_id);
 
     if (!$stmt->execute()) {
         jsonResponse(array('status' => 'error', 'message' => $stmt->error), 500);
@@ -187,7 +187,7 @@ function completeOrder($conn, $order, $input) {
     }
 
     $destination = $input['destination'];
-    if (!in_array($destination, array('FP Warehouse', 'Printer', 'Cutter'))) {
+    if (!in_array($destination, array('FG Warehouse', 'Printer', 'Cutter'))) {
         jsonResponse(array('status' => 'error', 'message' => 'Invalid destination'), 400);
     }
     if ($destination === $order['machine_type']) {
@@ -203,31 +203,31 @@ function completeOrder($conn, $order, $input) {
         $stmt->bind_param("si", $destination, $id);
         $stmt->execute();
 
-        if ($destination === 'FP Warehouse') {
-            $warehouse = isset($input['fpWarehouseCode']) ? strtoupper($input['fpWarehouseCode']) : 'A';
-            $zone = isset($input['fpRowLocation']) ? strtoupper($input['fpRowLocation']) : 'A';
-            $row = isset($input['fpColumnLocation']) ? intval($input['fpColumnLocation']) : 1;
-            $level = isset($input['fpLevel']) ? intval($input['fpLevel']) : 0;
-            $location_error = validateFpLocation($warehouse, $zone, $row, $level);
+        if ($destination === 'FG Warehouse') {
+            $warehouse = isset($input['fgWarehouseCode']) ? strtoupper($input['fgWarehouseCode']) : 'A';
+            $zone = isset($input['fgRowLocation']) ? strtoupper($input['fgRowLocation']) : 'A';
+            $row = isset($input['fgColumnLocation']) ? intval($input['fgColumnLocation']) : 1;
+            $level = isset($input['fgLevel']) ? intval($input['fgLevel']) : 0;
+            $location_error = validateFgLocation($warehouse, $zone, $row, $level);
             if ($location_error) {
                 throw new Exception($location_error);
             }
-            $location_id = generateFpLocationId($warehouse, $zone, $row, $level);
+            $location_id = generateFgLocationId($warehouse, $zone, $row, $level);
 
-            $sql_fp = "INSERT INTO FDwarehouse (pr_no, fp_product_id, fp_product_name, quantity, source_machine, warehouse, row_location, column_location, level, location_id)
+            $sql_fp = "INSERT INTO FGwarehouse (pr_no, fg_product_id, fg_product_name, quantity, source_machine, warehouse, row_location, column_location, level, location_id)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_fp = $conn->prepare($sql_fp);
             $qty = intval($order['quantity']);
-            $stmt_fp->bind_param("sssisssiis", $order['pr_no'], $order['final_product_id'], $order['final_product_name'], $qty, $order['machine_type'], $warehouse, $zone, $row, $level, $location_id);
+            $stmt_fp->bind_param("sssisssiis", $order['pr_no'], $order['fg_product_id'], $order['fg_product_name'], $qty, $order['machine_type'], $warehouse, $zone, $row, $level, $location_id);
             $stmt_fp->execute();
 
-            logOrderHistory($conn, 'Inbound', 'Receive Final Product', 'PR', $order['pr_no'], $order['final_product_id'], $order['final_product_name'], $order['quantity'], $order['machine_type'], 'FP Warehouse ' . $location_id, 'Received', '');
+            logOrderHistory($conn, 'Inbound', 'Receive Final Product', 'PR', $order['pr_no'], $order['fg_product_id'], $order['fg_product_name'], $order['quantity'], $order['machine_type'], 'FG Warehouse ' . $location_id, 'Received', '');
         } else {
             $next_input = array(
-                'sourceProductId' => $order['final_product_id'],
-                'sourceProductName' => $order['final_product_name'],
-                'finalProductId' => $order['final_product_id'],
-                'finalProductName' => $order['final_product_name'],
+                'sourceProductId' => $order['fg_product_id'],
+                'sourceProductName' => $order['fg_product_name'],
+                'fgProductId' => $order['fg_product_id'],
+                'fgProductName' => $order['fg_product_name'],
                 'quantity' => $order['quantity'],
                 'machineType' => $destination,
                 'parentPrId' => $id
@@ -236,19 +236,19 @@ function completeOrder($conn, $order, $input) {
             $parent_pr_id = $id;
             $source_inventory_id = null;
             $qty = intval($next_input['quantity']);
-            $sql_next = "INSERT INTO production_orders (pr_no, source_inventory_id, source_product_id, source_product_name, final_product_id, final_product_name, quantity, machine_type, parent_pr_id)
+            $sql_next = "INSERT INTO production_orders (pr_no, source_inventory_id, source_product_id, source_product_name, fg_product_id, fg_product_name, quantity, machine_type, parent_pr_id)
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt_next = $conn->prepare($sql_next);
-            $stmt_next->bind_param("sissssisi", $next_pr_no, $source_inventory_id, $next_input['sourceProductId'], $next_input['sourceProductName'], $next_input['finalProductId'], $next_input['finalProductName'], $qty, $destination, $parent_pr_id);
+            $stmt_next->bind_param("sissssisi", $next_pr_no, $source_inventory_id, $next_input['sourceProductId'], $next_input['sourceProductName'], $next_input['fgProductId'], $next_input['fgProductName'], $qty, $destination, $parent_pr_id);
             $stmt_next->execute();
 
-            logOrderHistory($conn, 'Outbound', 'Transfer To Next Machine', 'PR', $order['pr_no'], $order['final_product_id'], $order['final_product_name'], $order['quantity'], $order['machine_type'], $destination, 'รอผลิต', 'Next PR: ' . $next_pr_no);
+            logOrderHistory($conn, 'Outbound', 'Transfer To Next Machine', 'PR', $order['pr_no'], $order['fg_product_id'], $order['fg_product_name'], $order['quantity'], $order['machine_type'], $destination, 'รอผลิต', 'Next PR: ' . $next_pr_no);
         }
 
         logOrderHistory($conn, 'Outbound', 'Complete Production Order', 'PR', $order['pr_no'], $order['source_product_id'], $order['source_product_name'], $order['quantity'], $order['machine_type'], $destination, 'เสร็จสิ้น', '');
         $conn->commit();
         emitLiveUpdate('production.changed', array('action' => 'complete', 'id' => $id, 'destination' => $destination));
-        emitLiveUpdate('fp.changed', array('action' => 'receive', 'id' => $id, 'destination' => $destination));
+        emitLiveUpdate('fg.changed', array('action' => 'receive', 'id' => $id, 'destination' => $destination));
         emitLiveUpdate('history.changed', array('action' => 'complete'));
     } catch (Exception $e) {
         $conn->rollback();
@@ -280,22 +280,22 @@ function generatePrNo($conn) {
     return $pr_no;
 }
 
-function generateFpLocationId($warehouse, $zone, $row, $level) {
+function generateFgLocationId($warehouse, $zone, $row, $level) {
     return strtoupper($warehouse) . strtoupper($zone) . '-' . $row . '-' . $level;
 }
 
-function validateFpLocation($warehouse, $zone, $row, $level) {
+function validateFgLocation($warehouse, $zone, $row, $level) {
     if (!preg_match('/^[A-B]$/', $warehouse)) {
-        return 'FP warehouse must be A or B';
+        return 'FG warehouse must be A or B';
     }
     if (!preg_match('/^[A-C]$/', $zone)) {
-        return 'FP zone must be A, B, or C';
+        return 'FG zone must be A, B, or C';
     }
     if ($row < 1 || $row > 5) {
-        return 'FP row must be between 1 and 5';
+        return 'FG row must be between 1 and 5';
     }
     if ($level < 0 || $level > 3) {
-        return 'FP level must be between 0 and 3';
+        return 'FG level must be between 0 and 3';
     }
 
     return null;

@@ -18,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 $sql = "SELECT fp.id,
                fp.pr_no,
-               fp.fp_product_id AS product_id,
-               fp.fp_product_name AS product_name,
+               fp.fg_product_id AS product_id,
+               fp.fg_product_name AS product_name,
                fp.quantity,
                fp.source_machine,
                fp.warehouse,
@@ -29,10 +29,10 @@ $sql = "SELECT fp.id,
                fp.location_id,
                fp.received_at,
                fp.created_at
-        FROM FDwarehouse fp
+        FROM FGwarehouse fp
         INNER JOIN production_orders po ON po.pr_no = fp.pr_no
         WHERE po.status = 'เสร็จสิ้น'
-          AND po.next_destination = 'FP Warehouse'
+          AND po.next_destination = 'FG Warehouse'
           AND fp.location_id IS NOT NULL
           AND fp.location_id <> ''
         ORDER BY fp.warehouse, fp.row_location, fp.column_location, fp.level, fp.received_at DESC";
