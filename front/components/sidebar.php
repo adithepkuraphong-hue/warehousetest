@@ -25,6 +25,11 @@
             <span class="nav-item-text">Production</span>
         </a>
 
+        <a class="nav-item <?php echo (($activePage ?? '') === 'product_order') ? 'active' : ''; ?>" href="/testapi/front/product_order.php">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/><path d="M17 3v6"/></svg>
+            <span class="nav-item-text">เปิด Product Order</span>
+        </a>
+
         <a class="nav-item <?php echo (($activePage ?? '') === 'fg') ? 'active' : ''; ?>" href="/testapi/front/fg_warehouse.php">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
             <span class="nav-item-text">FG Warehouse</span>

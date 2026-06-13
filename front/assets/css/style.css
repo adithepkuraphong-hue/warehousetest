@@ -1173,6 +1173,10 @@ table tbody tr:hover {
     .history-filter-actions {
         justify-content: flex-start;
     }
+
+    .product-order-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .mobile-overlay {
@@ -1311,6 +1315,101 @@ table tbody tr:hover {
     display: flex;
     gap: 8px;
     align-items: center;
+}
+
+.product-order-grid {
+    align-items: start;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+}
+
+.product-order-form {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+}
+
+.product-order-form .form-group {
+    margin-bottom: 0;
+}
+
+.product-order-form select,
+.product-order-form input {
+    min-height: 40px;
+}
+
+.product-order-form option:disabled,
+.product-order-form .option-disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
+.product-order-rid {
+    align-items: center;
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 12px 14px;
+}
+
+.product-order-rid span {
+    color: var(--text-3);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.product-order-rid strong {
+    color: var(--primary);
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.25rem;
+}
+
+.product-order-actions {
+    margin: 4px -18px -18px;
+}
+
+.po-summary-body {
+    display: grid;
+    gap: 10px;
+    padding: 14px;
+}
+
+.po-summary-row {
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 10px 12px;
+}
+
+.po-summary-row span {
+    color: var(--text-3);
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.po-summary-row strong {
+    color: var(--text-1);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.po-summary-note {
+    background: var(--success-light);
+    border: 1px solid #bbf7d0;
+    border-radius: 9px;
+    color: #047857;
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 10px 12px;
 }
 
 .machine-column {
