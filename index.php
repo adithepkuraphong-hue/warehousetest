@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบบริหารคลังสินค้า (Inventory Dashboard)</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="front/assets/css/style.css">
 </head>
 <body>
 <?php
@@ -16,12 +16,12 @@ $showInventoryToolbar = true;
 <!-- Mobile overlay -->
 <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
 
-<?php include __DIR__ . "/components/sidebar.php"; ?>
+<?php include __DIR__ . "/front/components/sidebar.php"; ?>
 
 <!-- ═══════════ MAIN WRAPPER ═══════════ -->
 <div class="main-wrapper" id="mainWrapper">
 
-    <?php include __DIR__ . "/components/navbar.php"; ?>
+    <?php include __DIR__ . "/front/components/navbar.php"; ?>
 
     <!-- PAGE CONTENT -->
     <main class="page-content">
@@ -271,8 +271,8 @@ $showInventoryToolbar = true;
      JAVASCRIPT
 ════════════════════════════════════════ -->
 <script>
-    const API_URL = '/testapi/api/inventory.php';
-    const PRODUCTION_API_URL = '/testapi/api/production.php';
+    const API_URL = 'api/inventory.php';
+    const PRODUCTION_API_URL = 'api/production.php';
 
     let inventoryCachedData = [];
     let filteredData = [];
@@ -836,6 +836,6 @@ $showInventoryToolbar = true;
     function escAttr(s) { return String(s).replace(/'/g, "\\'"); }
     function escRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 </script>
-<script src="assets/js/live-updates.js"></script>
+<script src="front/assets/js/live-updates.js"></script>
 </body>
 </html>

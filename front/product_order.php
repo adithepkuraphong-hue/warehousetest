@@ -112,7 +112,7 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/product_order.php';
+    const API_URL = '../api/product_order.php';
     let materials = [];
     let materialLocations = [];
     let sidebarCollapsed = false;

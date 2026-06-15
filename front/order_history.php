@@ -73,7 +73,7 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/order_history.php';
+    const API_URL = '../api/order_history.php';
     let sidebarCollapsed = false;
     let latestIds = { Inbound: 0, Outbound: 0 };
 

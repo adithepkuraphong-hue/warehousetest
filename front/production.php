@@ -143,7 +143,7 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/production.php';
+    const API_URL = '../api/production.php';
     const machines = ['Printer', 'Cutter'];
     let orders = [];
     let completingOrder = null;

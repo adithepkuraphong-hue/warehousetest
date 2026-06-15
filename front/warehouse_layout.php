@@ -80,7 +80,7 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/inventory.php';
+    const API_URL = '../api/inventory.php';
     const warehouses = ['A', 'B'];
     const zones = ['A', 'B', 'C'];
     const rows = [1, 2, 3, 4, 5];

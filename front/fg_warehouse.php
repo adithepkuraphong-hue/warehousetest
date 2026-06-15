@@ -66,7 +66,7 @@ $showInventoryToolbar = false;
 <div id="toastAlert" class="toast"></div>
 
 <script>
-    const API_URL = '/testapi/api/fg_warehouse.php';
+    const API_URL = '../api/fg_warehouse.php';
     let sidebarCollapsed = false;
 
     document.addEventListener('DOMContentLoaded', () => {

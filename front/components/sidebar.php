@@ -1,3 +1,8 @@
+<?php
+$scriptDir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+$appBase = preg_replace('#/front$#', '', $scriptDir);
+$frontBase = ($appBase === '' ? '' : $appBase) . '/front';
+?>
 <!-- ═══════════ SIDEBAR ═══════════ -->
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -15,37 +20,37 @@
     <div class="sidebar-nav">
         <div class="nav-section-label">เมนูหลัก</div>
 
-        <a class="nav-item <?php echo (($activePage ?? 'inventory') === 'inventory') ? 'active' : ''; ?>" href="/testapi/front/index.php">
+        <a class="nav-item <?php echo (($activePage ?? 'inventory') === 'inventory') ? 'active' : ''; ?>" href="<?php echo htmlspecialchars(($appBase === '' ? '' : $appBase) . '/index.php', ENT_QUOTES, 'UTF-8'); ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
             <span class="nav-item-text">คลังสินค้า</span>
         </a>
 
-        <a class="nav-item <?php echo (($activePage ?? '') === 'production') ? 'active' : ''; ?>" href="/testapi/front/production.php">
+        <a class="nav-item <?php echo (($activePage ?? '') === 'production') ? 'active' : ''; ?>" href="<?php echo htmlspecialchars($frontBase . '/production.php', ENT_QUOTES, 'UTF-8'); ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4-1.4l7-7a1 1 0 011.4 0z"/><path d="M12 8l4 4m-9 4l1 4 4-1m6-16l3 3-4 4-3-3 4-4z"/></svg>
             <span class="nav-item-text">Production</span>
         </a>
 
-        <a class="nav-item <?php echo (($activePage ?? '') === 'product_order') ? 'active' : ''; ?>" href="/testapi/front/product_order.php">
+        <a class="nav-item <?php echo (($activePage ?? '') === 'product_order') ? 'active' : ''; ?>" href="<?php echo htmlspecialchars($frontBase . '/product_order.php', ENT_QUOTES, 'UTF-8'); ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/><path d="M17 3v6"/></svg>
             <span class="nav-item-text">เปิด Product Order</span>
         </a>
 
-        <a class="nav-item <?php echo (($activePage ?? '') === 'fg') ? 'active' : ''; ?>" href="/testapi/front/fg_warehouse.php">
+        <a class="nav-item <?php echo (($activePage ?? '') === 'fg') ? 'active' : ''; ?>" href="<?php echo htmlspecialchars($frontBase . '/fg_warehouse.php', ENT_QUOTES, 'UTF-8'); ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
             <span class="nav-item-text">FG Warehouse</span>
         </a>
 
-        <a class="nav-item <?php echo (($activePage ?? '') === 'history') ? 'active' : ''; ?>" href="/testapi/front/order_history.php">
+        <a class="nav-item <?php echo (($activePage ?? '') === 'history') ? 'active' : ''; ?>" href="<?php echo htmlspecialchars($frontBase . '/order_history.php', ENT_QUOTES, 'UTF-8'); ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="nav-item-text">Order History</span>
         </a>
 
-        <a class="nav-item <?php echo (($activePage ?? '') === 'layout') ? 'active' : ''; ?>" href="/testapi/front/warehouse_layout.php">
+        <a class="nav-item <?php echo (($activePage ?? '') === 'layout') ? 'active' : ''; ?>" href="<?php echo htmlspecialchars($frontBase . '/warehouse_layout.php', ENT_QUOTES, 'UTF-8'); ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
             <span class="nav-item-text">Warehouse Layout</span>
         </a>
 
-        <a class="nav-item <?php echo (($activePage ?? '') === 'fg_layout') ? 'active' : ''; ?>" href="/testapi/front/fg_warehouse_layout.php">
+        <a class="nav-item <?php echo (($activePage ?? '') === 'fg_layout') ? 'active' : ''; ?>" href="<?php echo htmlspecialchars($frontBase . '/fg_warehouse_layout.php', ENT_QUOTES, 'UTF-8'); ?>">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v7H3z"/><path d="M3 14h8v7H3zM15 14h6v7h-6z"/></svg>
             <span class="nav-item-text">FG Layout</span>
         </a>
